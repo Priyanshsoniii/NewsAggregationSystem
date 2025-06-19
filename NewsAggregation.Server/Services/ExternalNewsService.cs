@@ -1,203 +1,228 @@
-﻿//using Microsoft.Extensions.Logging;
-//using Microsoft.Extensions.Configuration;
-//using System.Text.Json;
+﻿using System.ServiceModel.Syndication;
+using System.Text.Json;
+using System.Xml;
+using NewsAggregation.Server.Services.Interfaces;
+using System.ServiceModel.Syndication;
+using System.Xml;
+using NewsAggregation.Server.Models.Entities;
 
-//using NewsAggregation.Server.Services.Interfaces;
+namespace NewsAggregation.Server.Services
+{
+    public class ExternalNewsService : IExternalNewsService
+    {
+        private readonly HttpClient _httpClient;
+        private readonly ILogger<ExternalNewsService> _logger;
+        private readonly IConfiguration _configuration;
 
-//namespace NewsAggregation.Server.Services
-//{
-//    public class ExternalNewsService : IExternalNewsService
-//    {
-//        private readonly HttpClient _httpClient;
-//        private readonly ILogger<ExternalNewsService> _logger;
-//        private readonly IConfiguration _configuration;
+        public ExternalNewsService(HttpClient httpClient, ILogger<ExternalNewsService> logger, IConfiguration configuration)
+        {
+            _httpClient = httpClient;
+            _logger = logger;
+            _configuration = configuration;
+        }
 
-//        public ExternalNewsService(HttpClient httpClient, ILogger<ExternalNewsService> logger, IConfiguration configuration)
-//        {
-//            _httpClient = httpClient;
-//            _logger = logger;
-//            _configuration = configuration;
-//        }
+        private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> ParseRSSFeedAsync(string feedUrl, CancellationToken cancellationToken)
+        {
+            var articles = new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
+            try
+            {
+                using var stream = await _httpClient.GetStreamAsync(feedUrl, cancellationToken);
+                using var reader = XmlReader.Create(stream);
+                var feed = SyndicationFeed.Load(reader);
 
-//        public async Task<IEnumerable<NewsArticle>> FetchLatestNewsAsync(CancellationToken cancellationToken = default)
-//        {
-//            var articles = new List<NewsArticle>();
+                foreach (var item in feed.Items)
+                {
+                    articles.Add(new NewsAggregation.Server.Models.Entities.NewsArticle
+                    {
+                        Title = item.Title?.Text ?? "No Title",
+                        Description = item.Summary?.Text ?? "",
+                        Url = item.Links.FirstOrDefault()?.Uri.ToString() ?? "",
+                        Source = new Uri(feedUrl).Host,
+                        PublishedAt = item.PublishDate.UtcDateTime != DateTime.MinValue ? item.PublishDate.UtcDateTime : DateTime.UtcNow,
+                        // You can map more fields if needed
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error parsing RSS feed: {FeedUrl}", feedUrl);
+            }
+            return articles;
+        }
 
-//            try
-//            {
-//                // Fetch from multiple news sources
-//                var tasks = new List<Task<IEnumerable<NewsArticle>>>
-//                {
-//                    FetchFromNewsAPIAsync(cancellationToken),
-//                    FetchFromRSSFeedsAsync(cancellationToken)
-//                };
+        //public async Task<IEnumerable<NewsArticle>> FetchLatestNewsAsync(CancellationToken cancellationToken = default)
+        //{
+        //    var articles = new List<NewsArticle>();
 
-//                var results = await Task.WhenAll(tasks);
+        //    try
+        //    {
+        //        var tasks = new List<Task<IEnumerable<NewsArticle>>>
+        //        {
+        //            FetchFromNewsAPIAsync(cancellationToken),
+        //            FetchFromRSSFeedsAsync(cancellationToken)
+        //        };
 
-//                foreach (var result in results)
-//                {
-//                    articles.AddRange(result);
-//                }
+        //        var results = await Task.WhenAll(tasks);
 
-//                // Remove duplicates and sort by publish date
-//                var uniqueArticles = articles
-//                    .GroupBy(a => a.Title.ToLowerInvariant())
-//                    .Select(g => g.First())
-//                    .OrderByDescending(a => a.PublishedAt)
-//                    .ToList();
+        //        foreach (var result in results)
+        //        {
+        //            articles.AddRange(result);
+        //        }
 
-//                _logger.LogInformation("Successfully fetched {Count} unique articles from external sources", uniqueArticles.Count);
+        //        var uniqueArticles = articles
+        //            .GroupBy(a => a.Title.ToLowerInvariant())
+        //            .Select(g => g.First())
+        //            .OrderByDescending(a => a.PublishedAt)
+        //            .ToList();
 
-//                return uniqueArticles;
-//            }
-//            catch (Exception ex)
-//            {
-//                _logger.LogError(ex, "Error fetching news from external sources");
-//                return new List<NewsArticle>();
-//            }
-//        }
+        //        _logger.LogInformation("Successfully fetched {Count} unique articles from external sources", uniqueArticles.Count);
 
-//        private async Task<IEnumerable<NewsArticle>> FetchFromNewsAPIAsync(CancellationToken cancellationToken)
-//        {
-//            try
-//            {
-//                var apiKey = _configuration["NewsAPI:ApiKey"];
-//                if (string.IsNullOrEmpty(apiKey))
-//                {
-//                    _logger.LogWarning("NewsAPI key not configured, skipping NewsAPI fetch");
-//                    return new List<NewsArticle>();
-//                }
+        //        return uniqueArticles;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error fetching news from external sources");
+        //        return new List<NewsArticle>();
+        //    }
+        //}
 
-//                var url = $"https://newsapi.org/v2/top-headlines?country=us&apiKey={apiKey}";
-//                var response = await _httpClient.GetStringAsync(url, cancellationToken);
+        public async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> FetchLatestNewsAsync(CancellationToken cancellationToken = default)
+        {
+            var articles = new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
 
-//                var newsApiResponse = JsonSerializer.Deserialize<NewsApiResponse>(response, new JsonSerializerOptions
-//                {
-//                    PropertyNameCaseInsensitive = true
-//                });
+            try
+            {
+                var tasks = new List<Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>>>
+        {
+            FetchFromNewsAPIAsync(cancellationToken),
+            FetchFromRSSFeedsAsync(cancellationToken)
+        };
 
-//                var articles = newsApiResponse?.Articles?.Select(article => new NewsArticle
-//                {
-//                    Title = article.Title ?? "No Title",
-//                    Description = article.Description ?? "No Description",
-//                    Url = article.Url ?? "",
-//                    Source = article.Source?.Name ?? "NewsAPI",
-//                    PublishedAt = DateTime.TryParse(article.PublishedAt, out var date) ? date : DateTime.UtcNow,
-//                    ImageUrl = article.UrlToImage
-//                }).ToList() ?? new List<NewsArticle>();
+                var results = await Task.WhenAll(tasks);
 
-//                _logger.LogInformation("Fetched {Count} articles from NewsAPI", articles.Count);
-//                return articles;
-//            }
-//            catch (Exception ex)
-//            {
-//                _logger.LogError(ex, "Error fetching from NewsAPI");
-//                return new List<NewsArticle>();
-//            }
-//        }
+                foreach (var result in results)
+                {
+                    articles.AddRange(result);
+                }
 
-//        private async Task<IEnumerable<NewsArticle>> FetchFromRSSFeedsAsync(CancellationToken cancellationToken)
-//        {
-//            var articles = new List<NewsArticle>();
+                var uniqueArticles = articles
+                    .GroupBy(a => a.Title.ToLowerInvariant())
+                    .Select(g => g.First())
+                    .OrderByDescending(a => a.PublishedAt)
+                    .ToList();
 
-//            // Sample RSS feeds - you can add more
-//            var rssFeeds = new[]
-//            {
-//                "https://rss.cnn.com/rss/edition.rss",
-//                "https://feeds.bbci.co.uk/news/rss.xml",
-//                "https://www.reuters.com/tools/rss"
-//            };
+                _logger.LogInformation("Successfully fetched {Count} unique articles from external sources", uniqueArticles.Count);
 
-//            try
-//            {
-//                foreach (var feedUrl in rssFeeds)
-//                {
-//                    try
-//                    {
-//                        var feedArticles = await ParseRSSFeedAsync(feedUrl, cancellationToken);
-//                        articles.AddRange(feedArticles);
-//                    }
-//                    catch (Exception ex)
-//                    {
-//                        _logger.LogWarning(ex, "Failed to fetch RSS feed: {FeedUrl}", feedUrl);
-//                    }
-//                }
+                return uniqueArticles;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching news from external sources");
+                return new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
+            }
+        }
 
-//                _logger.LogInformation("Fetched {Count} articles from RSS feeds", articles.Count);
-//                return articles;
-//            }
-//            catch (Exception ex)
-//            {
-//                _logger.LogError(ex, "Error fetching from RSS feeds");
-//                return articles;
-//            }
-//        }
+        private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> FetchFromNewsAPIAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var apiKey = _configuration["NewsAPI:ApiKey"];
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    _logger.LogWarning("NewsAPI key not configured, skipping NewsAPI fetch");
+                    return new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
+                }
 
-//        private async Task<IEnumerable<NewsArticle>> ParseRSSFeedAsync(string feedUrl, CancellationToken cancellationToken)
-//        {
-//            try
-//            {
-//                var xmlContent = await _httpClient.GetStringAsync(feedUrl, cancellationToken);
+                var url = $"https://newsapi.org/v2/top-headlines?country=us&apiKey={apiKey}";
+                var response = await _httpClient.GetStringAsync(url, cancellationToken);
 
-//                // This is a simple RSS parser - you might want to use a more robust library like SyndicationFeed
-//                var articles = new List<NewsArticle>();
+                var newsApiResponse = JsonSerializer.Deserialize<NewsApiResponse>(response, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
 
-//                // For demonstration, creating a simple RSS article
-//                // In production, you'd want to use XDocument or SyndicationFeed to parse properly
-//                articles.Add(new NewsArticle
-//                {
-//                    Title = $"Sample RSS Article from {new Uri(feedUrl).Host}",
-//                    Description = "This is a placeholder for RSS content parsing",
-//                    Url = feedUrl,
-//                    Source = new Uri(feedUrl).Host,
-//                    PublishedAt = DateTime.UtcNow
-//                });
+                var articles = newsApiResponse?.Articles?.Select(article => new NewsAggregation.Server.Models.Entities.NewsArticle
+                {
+                    Title = article.Title ?? "No Title",
+                    Description = article.Description ?? "No Description",
+                    Url = article.Url ?? "",
+                    Source = article.Source?.Name ?? "NewsAPI",
+                    PublishedAt = DateTime.TryParse(article.PublishedAt, out var date) ? date : DateTime.UtcNow,
+                    ImageUrl = article.UrlToImage
+                }).ToList() ?? new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
 
-//                return articles;
-//            }
-//            catch (Exception ex)
-//            {
-//                _logger.LogError(ex, "Error parsing RSS feed: {FeedUrl}", feedUrl);
-//                return new List<NewsArticle>();
-//            }
-//        }
-//    }
+                _logger.LogInformation("Fetched {Count} articles from NewsAPI", articles.Count);
+                return articles;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching from NewsAPI");
+                return new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
+            }
+        }
 
-//    // Data models
-//    public class NewsArticle
-//    {
-//        public string Title { get; set; } = string.Empty;
-//        public string Description { get; set; } = string.Empty;
-//        public string Url { get; set; } = string.Empty;
-//        public string Source { get; set; } = string.Empty;
-//        public DateTime PublishedAt { get; set; }
-//        public string? ImageUrl { get; set; }
-//        public List<string> Categories { get; set; } = new();
-//    }
+        private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> FetchFromRSSFeedsAsync(CancellationToken cancellationToken)
+        {
+            var articles = new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
+            var rssFeeds = new[]
+            {
+               "https://rss.cnn.com/rss/edition.rss",
+               "https://feeds.bbci.co.uk/news/rss.xml",
+               "https://www.reuters.com/tools/rss"
+           };
 
-//    // NewsAPI response models
-//    public class NewsApiResponse
-//    {
-//        public string Status { get; set; } = string.Empty;
-//        public int TotalResults { get; set; }
-//        public List<NewsApiArticle> Articles { get; set; } = new();
-//    }
+            foreach (var feedUrl in rssFeeds)
+            {
+                try
+                {
+                    var feedArticles = await ParseRSSFeedAsync(feedUrl, cancellationToken);
+                    articles.AddRange(feedArticles);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to fetch RSS feed: {FeedUrl}", feedUrl);
+                }
+            }
 
-//    public class NewsApiArticle
-//    {
-//        public NewsApiSource? Source { get; set; }
-//        public string? Author { get; set; }
-//        public string? Title { get; set; }
-//        public string? Description { get; set; }
-//        public string? Url { get; set; }
-//        public string? UrlToImage { get; set; }
-//        public string? PublishedAt { get; set; }
-//        public string? Content { get; set; }
-//    }
+            _logger.LogInformation("Fetched {Count} articles from RSS feeds", articles.Count);
+            return articles;
+        }
 
-//    public class NewsApiSource
-//    {
-//        public string? Id { get; set; }
-//        public string? Name { get; set; }
-//    }
-//}
+        // Data models (keep as is or use your shared NewsArticle model)
+        public class NewsArticle
+        {
+            public string Title { get; set; } = string.Empty;
+            public string Description { get; set; } = string.Empty;
+            public string Url { get; set; } = string.Empty;
+            public string Source { get; set; } = string.Empty;
+            public DateTime PublishedAt { get; set; }
+            public string? ImageUrl { get; set; }
+            public List<string> Categories { get; set; } = new();
+        }
+
+        public class NewsApiResponse
+        {
+            public string Status { get; set; } = string.Empty;
+            public int TotalResults { get; set; }
+            public List<NewsApiArticle> Articles { get; set; } = new();
+        }
+
+        public class NewsApiArticle
+        {
+            public NewsApiSource? Source { get; set; }
+            public string? Author { get; set; }
+            public string? Title { get; set; }
+            public string? Description { get; set; }
+            public string? Url { get; set; }
+            public string? UrlToImage { get; set; }
+            public string? PublishedAt { get; set; }
+            public string? Content { get; set; }
+        }
+
+        public class NewsApiSource
+        {
+            public string? Id { get; set; }
+            public string? Name { get; set; }
+        }
+    }
+}

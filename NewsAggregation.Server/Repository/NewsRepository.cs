@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NewsAggregation.Server.Data;
-using NewsAggregation.Server.Data.Models.Entities;
+using NewsAggregation.Server.Models.Entities;
 using NewsAggregation.Server.Repository.Interfaces;
 
 namespace NewsAggregation.Server.Repository

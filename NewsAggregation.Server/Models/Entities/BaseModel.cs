@@ -1,4 +1,4 @@
-﻿namespace NewsAggregation.Server.Data.Models.Entities
+﻿namespace NewsAggregation.Server.Models.Entities
 {
     public class BaseModel
     {

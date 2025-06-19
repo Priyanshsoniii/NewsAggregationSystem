@@ -65,14 +65,14 @@ services.AddScoped<IAuthService, AuthService>();
 services.AddScoped<IUserService, UserService>();
 services.AddScoped<INewsService, NewsService>();
 services.AddScoped<IEmailService, EmailService>();
-//services.AddScoped<IExternalNewsService, ExternalNewsService>();
+services.AddScoped<IExternalNewsService, ExternalNewsService>();
 services.AddScoped<ICategoryService, CategoryService>();
 
 // HTTP Client for external API calls
 services.AddHttpClient();
 
 // Background Services
-//services.AddHostedService<NewsAggregationService>();
+services.AddHostedService<NewsAggregationService>();
 
 // ===== API CONFIGURATION =====
 services.AddControllers();

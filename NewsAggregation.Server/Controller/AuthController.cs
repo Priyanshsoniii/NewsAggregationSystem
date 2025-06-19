@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using NewsAggregation.Server.Dtos;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using NewsAggregation.Server.Models.Dtos;
 using NewsAggregation.Server.Services.Interfaces;
 
 namespace NewsAggregation.Server.Controllers
@@ -20,35 +21,23 @@ namespace NewsAggregation.Server.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var (success, token, user) = await _authService.LoginAsync(loginDto.Username, loginDto.Password);
+
+            if (!success)
+                return Unauthorized(new { Message = "Invalid email/username or password" });
+
+            return Ok(new
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                var response = await _authService.LoginAsync(loginDto.Username, loginDto.Password);
-
-                if (!string.IsNullOrEmpty(response.Token))
-                {
-                    var user = await _userService.GetUserByEmailAsync(loginDto.Username);
-
-                    return Ok(new
-                    {
-                        Token = response,
-                        User = user,
-                        Message = "Login successful"
-                    });
-                }
-
-                return Unauthorized(new { Message = "Invalid email or password" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Message = "An error occurred during login", Error = ex.Message });
-            }
+                Token = token,
+                User = user,
+                Message = "Login successful"
+            });
         }
 
+        //[Authorize(Roles = "Admin")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
         {

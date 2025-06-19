@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace NewsAggregation.Server.Data.Models.Entities
+namespace NewsAggregation.Server.Models.Entities
 {
     public class UserNotificationSetting
     {

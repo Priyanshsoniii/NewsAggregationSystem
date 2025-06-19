@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using NewsAggregation.Server.Data.Models.Entities;
+using NewsAggregation.Server.Models.Entities;
 
 namespace NewsAggregation.Server.Data
 {
@@ -122,7 +122,7 @@ namespace NewsAggregation.Server.Data
                     Id = 2,
                     Name = "The News API",
                     ApiUrl = "https://api.thenewsapi.com/v1/news/top",
-                    ApiKey = "YOUR_THE_NEWS_API_KEY",
+                    ApiKey = "2iEVsACWuYsI8wRG8VrwA972129RYibJJRBw0bzG",
                     ServerType = "TheNewsAPI",
                     IsActive = true
                 },

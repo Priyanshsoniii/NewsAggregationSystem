@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace NewsAggregation.Server.Dtos;
+namespace NewsAggregation.Server.Models.Dtos;
 
 public class LoginDto
 {

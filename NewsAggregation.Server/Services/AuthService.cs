@@ -6,7 +6,8 @@ using System.Text;
 using NewsAggregation.Server.Configuration;
 using NewsAggregation.Server.Repository.Interfaces;
 using NewsAggregation.Server.Services.Interfaces;
-using NewsAggregation.Server.Data.Models.Entities;
+using Microsoft.AspNetCore.Identity;
+using NewsAggregation.Server.Models.Entities;
 
 namespace NewsAggregation.Server.Services
 {
@@ -14,11 +15,18 @@ namespace NewsAggregation.Server.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly JwtSettings _jwtSettings;
+        private readonly PasswordHasher<User> _passwordHasher;
+        private readonly IConfiguration _configuration;
 
-        public AuthService(IUserRepository userRepository, IOptions<AppSettings> appSettings)
+        public AuthService(
+            IUserRepository userRepository,
+            IOptions<AppSettings> appSettings,
+            IConfiguration configuration)
         {
             _userRepository = userRepository;
             _jwtSettings = appSettings.Value.JwtSettings;
+            _passwordHasher = new PasswordHasher<User>();
+            _configuration = configuration;
         }
 
         public async Task<(bool Success, string Token, User? User)> LoginAsync(string username, string password)
@@ -43,6 +51,30 @@ namespace NewsAggregation.Server.Services
             {
                 return (false, string.Empty, null);
             }
+        }
+
+        private string GenerateJwtToken(User user)
+        {
+            var claims = new[]
+            {
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role)
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(_jwtSettings.ExpirationHours),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         public async Task<(bool Success, string Message, User? User)> RegisterAsync(string username, string email, string password)
@@ -72,57 +104,6 @@ namespace NewsAggregation.Server.Services
             {
                 return (false, $"Registration failed: {ex.Message}", null);
             }
-        }
-
-        //public async Task<bool> ValidateTokenAsync(string token)
-        //{
-        //    try
-        //    {
-        //        var tokenHandler = new JwtSecurityTokenHandler();
-        //        var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
-
-        //        tokenHandler.ValidateToken(token, new TokenValidationParameters
-        //        {
-        //            ValidateIssuerSigningKey = true,
-        //            IssuerSigningKey = new SymmetricSecurityKey(key),
-        //            ValidateIssuer = true,
-        //            ValidIssuer = _jwtSettings.Issuer,
-        //            ValidateAudience = true,
-        //            ValidAudience = _jwtSettings.Audience,
-        //            ValidateLifetime = true,
-        //            ClockSkew = TimeSpan.Zero
-        //        }, out SecurityToken validatedToken);
-
-        //        return true;
-        //    }
-        //    catch
-        //    {
-        //        return false;
-        //    }
-        //}
-
-        public string GenerateJwtToken(User user)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.Name, user.Username),
-                    new Claim(ClaimTypes.Email, user.Email),
-                    new Claim(ClaimTypes.Role, user.Role)
-                }),
-                Expires = DateTime.UtcNow.AddHours(_jwtSettings.ExpirationHours),
-                Issuer = _jwtSettings.Issuer,
-                Audience = _jwtSettings.Audience,
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
         }
     }
 }

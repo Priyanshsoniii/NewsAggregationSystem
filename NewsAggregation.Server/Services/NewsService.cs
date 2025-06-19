@@ -1,4 +1,4 @@
-﻿using NewsAggregation.Server.Data.Models.Entities;
+﻿using NewsAggregation.Server.Models.Entities;
 using NewsAggregation.Server.Repository.Interfaces;
 using NewsAggregation.Server.Services.Interfaces;
 

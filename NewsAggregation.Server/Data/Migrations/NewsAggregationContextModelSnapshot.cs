@@ -56,7 +56,7 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 6, 19, 8, 1, 12, 492, DateTimeKind.Utc).AddTicks(3731),
+                            CreatedAt = new DateTime(2025, 6, 19, 18, 23, 57, 939, DateTimeKind.Utc).AddTicks(5153),
                             Description = "Business and finance news",
                             IsActive = true,
                             Name = "Business"
@@ -64,7 +64,7 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2025, 6, 19, 8, 1, 12, 492, DateTimeKind.Utc).AddTicks(3736),
+                            CreatedAt = new DateTime(2025, 6, 19, 18, 23, 57, 939, DateTimeKind.Utc).AddTicks(5158),
                             Description = "Entertainment and celebrity news",
                             IsActive = true,
                             Name = "Entertainment"
@@ -72,7 +72,7 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2025, 6, 19, 8, 1, 12, 492, DateTimeKind.Utc).AddTicks(3737),
+                            CreatedAt = new DateTime(2025, 6, 19, 18, 23, 57, 939, DateTimeKind.Utc).AddTicks(5159),
                             Description = "Sports news and updates",
                             IsActive = true,
                             Name = "Sports"
@@ -80,7 +80,7 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2025, 6, 19, 8, 1, 12, 492, DateTimeKind.Utc).AddTicks(3739),
+                            CreatedAt = new DateTime(2025, 6, 19, 18, 23, 57, 939, DateTimeKind.Utc).AddTicks(5160),
                             Description = "Technology and innovation news",
                             IsActive = true,
                             Name = "Technology"
@@ -88,7 +88,7 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 5,
-                            CreatedAt = new DateTime(2025, 6, 19, 8, 1, 12, 492, DateTimeKind.Utc).AddTicks(3740),
+                            CreatedAt = new DateTime(2025, 6, 19, 18, 23, 57, 939, DateTimeKind.Utc).AddTicks(5161),
                             Description = "General news and current events",
                             IsActive = true,
                             Name = "General"
@@ -149,10 +149,10 @@ namespace NewsAggregation.Server.Migrations
                             Id = 1,
                             ApiKey = "YOUR_NEWS_API_KEY",
                             ApiUrl = "https://newsapi.org/v2/top-headlines",
-                            CreatedAt = new DateTime(2025, 6, 19, 8, 1, 12, 492, DateTimeKind.Utc).AddTicks(3886),
+                            CreatedAt = new DateTime(2025, 6, 19, 18, 23, 57, 939, DateTimeKind.Utc).AddTicks(5343),
                             CurrentHourRequests = 0,
                             IsActive = true,
-                            LastHourReset = new DateTime(2025, 6, 19, 8, 1, 12, 492, DateTimeKind.Utc).AddTicks(3886),
+                            LastHourReset = new DateTime(2025, 6, 19, 18, 23, 57, 939, DateTimeKind.Utc).AddTicks(5343),
                             Name = "NewsAPI",
                             RequestsPerHour = 1000,
                             ServerType = "NewsAPI"
@@ -160,12 +160,12 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 2,
-                            ApiKey = "YOUR_THE_NEWS_API_KEY",
+                            ApiKey = "2iEVsACWuYsI8wRG8VrwA972129RYibJJRBw0bzG",
                             ApiUrl = "https://api.thenewsapi.com/v1/news/top",
-                            CreatedAt = new DateTime(2025, 6, 19, 8, 1, 12, 492, DateTimeKind.Utc).AddTicks(3890),
+                            CreatedAt = new DateTime(2025, 6, 19, 18, 23, 57, 939, DateTimeKind.Utc).AddTicks(5347),
                             CurrentHourRequests = 0,
                             IsActive = true,
-                            LastHourReset = new DateTime(2025, 6, 19, 8, 1, 12, 492, DateTimeKind.Utc).AddTicks(3890),
+                            LastHourReset = new DateTime(2025, 6, 19, 18, 23, 57, 939, DateTimeKind.Utc).AddTicks(5347),
                             Name = "The News API",
                             RequestsPerHour = 1000,
                             ServerType = "TheNewsAPI"
@@ -175,10 +175,10 @@ namespace NewsAggregation.Server.Migrations
                             Id = 3,
                             ApiKey = "af3ce09176fb4fd3be6fcfd1e000776c",
                             ApiUrl = "https://us-central1-symbolic-gift-98004.cloudfunctions.net/newsapi",
-                            CreatedAt = new DateTime(2025, 6, 19, 8, 1, 12, 492, DateTimeKind.Utc).AddTicks(3892),
+                            CreatedAt = new DateTime(2025, 6, 19, 18, 23, 57, 939, DateTimeKind.Utc).AddTicks(5349),
                             CurrentHourRequests = 0,
                             IsActive = true,
-                            LastHourReset = new DateTime(2025, 6, 19, 8, 1, 12, 492, DateTimeKind.Utc).AddTicks(3892),
+                            LastHourReset = new DateTime(2025, 6, 19, 18, 23, 57, 939, DateTimeKind.Utc).AddTicks(5349),
                             Name = "Firebase API",
                             RequestsPerHour = 1000,
                             ServerType = "Firebase"
@@ -364,10 +364,10 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 6, 19, 8, 1, 12, 492, DateTimeKind.Utc).AddTicks(3920),
+                            CreatedAt = new DateTime(2025, 6, 19, 18, 23, 57, 939, DateTimeKind.Utc).AddTicks(5373),
                             Email = "admin@newsaggregator.com",
                             IsActive = true,
-                            PasswordHash = "$2a$11$mpgBmkGjrFcFY2nyNksR/.a.MwQqn017HF60IEZq0u7VHngQ8hT82",
+                            PasswordHash = "$2a$11$Y.RS2UClJKMlQE9mJ9bvYelRgi9DJQNfLGnh//QFpJ8dvihTJxoSa",
                             Role = "Admin",
                             Username = "admin"
                         });
