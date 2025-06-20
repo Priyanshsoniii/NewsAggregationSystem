@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using NewsAggregation.Server.Models.Entities;
 using NewsAggregation.Server.Services.Interfaces;
 
 namespace NewsAggregation.Server.Controllers
@@ -93,6 +94,13 @@ namespace NewsAggregation.Server.Controllers
                 return Ok(new { Message = "Article removed from saved list" });
 
             return BadRequest(new { Message = "Failed to remove saved article" });
+        }
+
+        [HttpPost("import")]
+        public async Task<IActionResult> ImportArticles([FromBody] List<NewsArticle> articles)
+        {
+            await _newsService.ImportArticlesAsync(articles);
+            return Ok(new { Message = "Articles imported successfully" });
         }
     }
 

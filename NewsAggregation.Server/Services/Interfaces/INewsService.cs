@@ -13,5 +13,6 @@ namespace NewsAggregation.Server.Services.Interfaces
         Task<IEnumerable<NewsArticle>> GetSavedArticlesAsync(int userId);
         Task<bool> SaveArticleAsync(int userId, int articleId);
         Task<bool> RemoveSavedArticleAsync(int userId, int articleId);
+        Task ImportArticlesAsync(List<NewsArticle> articles);
     }
 }

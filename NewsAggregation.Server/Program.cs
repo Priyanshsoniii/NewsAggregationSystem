@@ -59,6 +59,7 @@ services.AddScoped<IUserRepository, UserRepository>();
 services.AddScoped<INewsRepository, NewsRepository>();
 services.AddScoped<IExternalServerRepository, ExternalServerRepository>();
 services.AddScoped<INotificationRepository, NotificationRepository>();
+services.AddScoped<ICategoryRepository, CategoryRepository>();
 
 // Services
 services.AddScoped<IAuthService, AuthService>();

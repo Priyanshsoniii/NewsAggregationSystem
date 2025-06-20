@@ -98,6 +98,7 @@ namespace NewsAggregation.Server.Services
                 };
 
                 var createdUser = await _userRepository.CreateAsync(user);
+               
                 return (true, "User registered successfully", createdUser);
             }
             catch (Exception ex)

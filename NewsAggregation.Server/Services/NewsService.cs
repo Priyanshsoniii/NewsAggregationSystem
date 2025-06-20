@@ -7,10 +7,12 @@ namespace NewsAggregation.Server.Services
     public class NewsService : INewsService
     {
         private readonly INewsRepository _newsRepository;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public NewsService(INewsRepository newsRepository)
+        public NewsService(INewsRepository newsRepository, ICategoryRepository categoryRepository)
         {
             _newsRepository = newsRepository;
+            _categoryRepository = categoryRepository;
         }
 
         public async Task<IEnumerable<NewsArticle>> GetHeadlinesAsync()
@@ -57,5 +59,42 @@ namespace NewsAggregation.Server.Services
         {
             return await _newsRepository.RemoveSavedArticleAsync(userId, articleId);
         }
+
+
+        public async Task ImportArticlesAsync(List<NewsArticle> articlesFromApi)
+        {
+            foreach (var article in articlesFromApi)
+            {
+                if (await _newsRepository.ArticleExistsAsync(article.Url))
+                    continue;
+
+                if (article.CategoryId == 0)
+                {
+                    article.CategoryId = await GetCategoryIdForArticleAsync(article);
+                }
+
+                if (article.CreatedAt == default)
+                    article.CreatedAt = DateTime.UtcNow;
+
+                article.Likes = article.Likes;
+                article.Dislikes = article.Dislikes;
+
+                await _newsRepository.CreateAsync(article);
+            }
+        }
+
+        private async Task<int> GetCategoryIdForArticleAsync(NewsArticle article)
+        {
+            var categories = await _categoryRepository.GetAllAsync();
+            if (article.Title.Contains("sport", StringComparison.OrdinalIgnoreCase))
+                return categories.FirstOrDefault(c => c.Name == "Sports")?.Id ?? categories.First().Id;
+            if (article.Title.Contains("business", StringComparison.OrdinalIgnoreCase))
+                return categories.FirstOrDefault(c => c.Name == "Business")?.Id ?? categories.First().Id;
+            // Add more rules as needed
+
+            return categories.First().Id; // Default
+        }
+
+
     }
 }
