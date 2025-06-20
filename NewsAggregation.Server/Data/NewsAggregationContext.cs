@@ -21,20 +21,17 @@ namespace NewsAggregation.Server.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // User Configuration
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasIndex(e => e.Email).IsUnique();
                 entity.HasIndex(e => e.Username).IsUnique();
             });
 
-            // Category Configuration
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.HasIndex(e => e.Name).IsUnique();
             });
 
-            // NewsArticle Configuration
             modelBuilder.Entity<NewsArticle>(entity =>
             {
                 entity.HasIndex(e => e.Url).IsUnique();
@@ -47,7 +44,6 @@ namespace NewsAggregation.Server.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // SavedArticle Configuration
             modelBuilder.Entity<SavedArticle>(entity =>
             {
                 entity.HasIndex(e => new { e.UserId, e.NewsArticleId }).IsUnique();
@@ -63,7 +59,6 @@ namespace NewsAggregation.Server.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Notification Configuration
             modelBuilder.Entity<Notification>(entity =>
             {
                 entity.HasIndex(e => e.UserId);
@@ -75,7 +70,6 @@ namespace NewsAggregation.Server.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // UserNotificationSetting Configuration
             modelBuilder.Entity<UserNotificationSetting>(entity =>
             {
                 entity.HasIndex(e => new { e.UserId, e.CategoryId }).IsUnique();
@@ -91,13 +85,12 @@ namespace NewsAggregation.Server.Data
                     .OnDelete(DeleteBehavior.SetNull);
             });
 
-            // Seed Data
             SeedData(modelBuilder);
         }
 
         private void SeedData(ModelBuilder modelBuilder)
         {
-            // Seed Categories
+
             modelBuilder.Entity<Category>().HasData(
                 new Category { Id = 1, Name = "Business", Description = "Business and finance news" },
                 new Category { Id = 2, Name = "Entertainment", Description = "Entertainment and celebrity news" },
@@ -106,7 +99,6 @@ namespace NewsAggregation.Server.Data
                 new Category { Id = 5, Name = "General", Description = "General news and current events" }
             );
 
-            // Seed External Servers
             modelBuilder.Entity<ExternalServer>().HasData(
                 new ExternalServer
                 {
@@ -137,7 +129,6 @@ namespace NewsAggregation.Server.Data
                 }
             );
 
-            // Seed Admin User
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
