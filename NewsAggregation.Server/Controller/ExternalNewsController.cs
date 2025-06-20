@@ -78,19 +78,19 @@ namespace NewsAggregation.Server.Controllers
         }
 
         // GET: api/ExternalNews/fetch-only (if you want to fetch without saving)
-        [HttpGet("fetch-only")]
-        public async Task<IActionResult> FetchLatestNewsOnly(CancellationToken cancellationToken)
-        {
-            try
-            {
-                var articles = await _externalNewsService.FetchLatestNewsAsync(cancellationToken);
-                return Ok(articles);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while fetching latest news");
-                return StatusCode(500, new { Error = "An error occurred while processing the request" });
-            }
-        }
+        //[HttpGet("fetch-only")]
+        //public async Task<IActionResult> FetchLatestNewsOnly(CancellationToken cancellationToken)
+        //{
+        //    try
+        //    {
+        //        var articles = await _externalNewsService.FetchLatestNewsAsync(cancellationToken);
+        //        return Ok(articles);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error occurred while fetching latest news");
+        //        return StatusCode(500, new { Error = "An error occurred while processing the request" });
+        //    }
+        //}
     }
 }

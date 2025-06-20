@@ -3,12 +3,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Text.Json.Serialization;
 using NewsAggregation.Server.Data;
 using NewsAggregation.Server.Configuration;
 using NewsAggregation.Server.Services.Interfaces;
 using NewsAggregation.Server.Repository.Interfaces;
 using NewsAggregation.Server.Repository;
 using NewsAggregation.Server.Services;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,7 +78,22 @@ services.AddHttpClient();
 services.AddHostedService<NewsAggregationService>();
 
 // ===== API CONFIGURATION =====
-services.AddControllers();
+services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Handle circular references
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+
+        // Use camelCase for JSON properties
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+
+        // Handle null values
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+
+        // Write indented JSON for better readability in development
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
+
 services.AddEndpointsApiExplorer();
 
 // Swagger Configuration
@@ -127,7 +144,6 @@ services.AddCors(options =>
 });
 
 var app = builder.Build();
-
 
 if (app.Environment.IsDevelopment())
 {
