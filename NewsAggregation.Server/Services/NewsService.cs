@@ -216,6 +216,8 @@ namespace NewsAggregation.Server.Services
         private async Task<int> GetCategoryIdForArticleAsync(NewsArticle article)
         {
             var categories = await _categoryRepository.GetAllAsync();
+            if (categories == null || !categories.Any())
+                throw new InvalidOperationException("No categories available for categorization.");
             var title = article.Title?.ToLower() ?? string.Empty;
             var description = article.Description?.ToLower() ?? string.Empty;
             foreach (var category in categories)
@@ -232,7 +234,24 @@ namespace NewsAggregation.Server.Services
                     }
                 }
             }
-            return categories.First().Id; // Default to first category if no match
+            return categories.First().Id; // Fallback to first category's Id if no match
+        }
+
+        public async Task<int> ReCategorizeAllArticlesAsync()
+        {
+            var articles = await _newsRepository.GetAllAsync();
+            int updatedCount = 0;
+            foreach (var article in articles)
+            {
+                int newCategoryId = await GetCategoryIdForArticleAsync(article);
+                if (article.CategoryId != newCategoryId)
+                {
+                    article.CategoryId = newCategoryId;
+                    await _newsRepository.UpdateAsync(article);
+                    updatedCount++;
+                }
+            }
+            return updatedCount;
         }
     }
 }

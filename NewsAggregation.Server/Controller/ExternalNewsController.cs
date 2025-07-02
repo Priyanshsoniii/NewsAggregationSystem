@@ -91,6 +91,12 @@ namespace NewsAggregation.Server.Controllers
             }
         }
 
-
+        [HttpPost("re-categorize")]
+        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ReCategorizeAllArticles()
+        {
+            var updatedCount = await _newsService.ReCategorizeAllArticlesAsync();
+            return Ok(new { Success = true, UpdatedCount = updatedCount, Message = "All articles re-categorized." });
+        }
     }
 }
