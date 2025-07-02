@@ -34,6 +34,13 @@ namespace NewsAggregation.Server.Repository
                 .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
         }
 
+        public async Task<User?> GetByEmailOrUsernameAsync(string emailOrUsername)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailOrUsername.ToLower() ||
+                                         u.Username.ToLower() == emailOrUsername.ToLower());
+        }
+
         public async Task<IEnumerable<User>> GetAllAsync()
         {
             return await _context.Users

@@ -6,6 +6,7 @@ namespace NewsAggregation.Server.Services.Interfaces
     {
         Task<User?> GetUserByIdAsync(int id);
         Task<User?> GetUserByEmailAsync(string email);
+        Task<User?> GetUserByUsernameAsync(string username);
         Task<IEnumerable<User>> GetAllUsersAsync();
         Task<User> UpdateUserAsync(User user);
         Task<bool> DeleteUserAsync(int id);

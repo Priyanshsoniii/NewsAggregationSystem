@@ -24,15 +24,24 @@ namespace NewsAggregation.Server.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var (success, token, user) = await _authService.LoginAsync(loginDto.Username, loginDto.Password);
+            var (success, token, user) = await _authService.LoginAsync(loginDto.Email, loginDto.Password);
 
             if (!success)
                 return Unauthorized(new { Message = "Invalid email/username or password" });
 
             return Ok(new
             {
+                Success = true,
                 Token = token,
-                User = user,
+                User = new
+                {
+                    user.Id,
+                    user.Username,
+                    user.Email,
+                    user.Role,
+                    user.CreatedAt,
+                    user.IsActive
+                },
                 Message = "Login successful"
             });
         }
@@ -70,8 +79,17 @@ namespace NewsAggregation.Server.Controllers
                 {
                     return CreatedAtAction(nameof(Login), new
                     {
+                        Success = true,
                         Message = "User registered successfully",
-                        Email = registerDto.Email
+                        User = new
+                        {
+                            registrationResult.User!.Id,
+                            registrationResult.User.Username,
+                            registrationResult.User.Email,
+                            registrationResult.User.Role,
+                            registrationResult.User.CreatedAt,
+                            registrationResult.User.IsActive
+                        }
                     });
                 }
 

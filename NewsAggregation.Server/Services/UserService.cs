@@ -23,6 +23,11 @@ namespace NewsAggregation.Server.Services
             return await _userRepository.GetByEmailAsync(email);
         }
 
+        public async Task<User?> GetUserByUsernameAsync(string username)
+        {
+            return await _userRepository.GetByUsernameAsync(username);
+        }
+
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
             return await _userRepository.GetAllAsync();

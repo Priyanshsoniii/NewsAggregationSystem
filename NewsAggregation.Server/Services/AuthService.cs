@@ -29,11 +29,11 @@ namespace NewsAggregation.Server.Services
             _configuration = configuration;
         }
 
-        public async Task<(bool Success, string Token, User? User)> LoginAsync(string username, string password)
+        public async Task<(bool Success, string Token, User? User)> LoginAsync(string email, string password)
         {
             try
             {
-                var user = await _userRepository.GetByUsernameAsync(username);
+                var user = await _userRepository.GetByEmailAsync(email);
                 if (user == null || !user.IsActive)
                 {
                     return (false, string.Empty, null);
