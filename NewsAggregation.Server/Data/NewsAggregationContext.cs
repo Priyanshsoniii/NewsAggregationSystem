@@ -183,11 +183,12 @@ namespace NewsAggregation.Server.Data
                 {
                     Id = 1,
                     Username = "admin",
-                    Email = "admin@newsaggregator.com",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                    Email = "admin@gmail.com",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123456&"),
                     Role = "Admin"
                 }
             );
         }
     }
 }
+
