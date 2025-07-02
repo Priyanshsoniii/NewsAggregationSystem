@@ -69,6 +69,7 @@ services.AddScoped<IUserService, UserService>();
 services.AddScoped<INewsService, NewsService>();
 services.AddScoped<IEmailService, EmailService>();
 services.AddScoped<IExternalNewsService, ExternalNewsService>();
+services.AddScoped<IExternalServerService, ExternalServerService>();
 services.AddScoped<ICategoryService, CategoryService>();
 
 // HTTP Client for external API calls

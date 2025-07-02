@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using NewsAggregation.Server.Models.Entities;
 using NewsAggregation.Server.Services;
 using NewsAggregation.Server.Services.Interfaces;
 
@@ -28,15 +30,12 @@ namespace NewsAggregation.Server.Controllers
         {
             try
             {
-                // Fetch articles from external sources
                 var articles = await _externalNewsService.FetchLatestNewsAsync(cancellationToken);
 
-                // Convert to List for ImportArticlesAsync method
                 var articlesList = articles.ToList();
 
                 if (articlesList.Any())
                 {
-                    // Save articles to database
                     await _newsService.ImportArticlesAsync(articlesList);
                     _logger.LogInformation("Successfully imported {Count} articles to database", articlesList.Count);
                 }
@@ -45,7 +44,6 @@ namespace NewsAggregation.Server.Controllers
                     _logger.LogWarning("No articles were fetched from external sources");
                 }
 
-                // Create DTOs to avoid circular reference
                 var articleDtos = articlesList.Select(a => new
                 {
                     a.Id,
@@ -77,20 +75,22 @@ namespace NewsAggregation.Server.Controllers
             }
         }
 
-        // GET: api/ExternalNews/fetch-only (if you want to fetch without saving)
-        //[HttpGet("fetch-only")]
-        //public async Task<IActionResult> FetchLatestNewsOnly(CancellationToken cancellationToken)
-        //{
-        //    try
-        //    {
-        //        var articles = await _externalNewsService.FetchLatestNewsAsync(cancellationToken);
-        //        return Ok(articles);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error occurred while fetching latest news");
-        //        return StatusCode(500, new { Error = "An error occurred while processing the request" });
-        //    }
-        //}
+       // GET: api/ExternalNews/fetch-only(fetch without saving)
+        [HttpGet("fetch-only")]
+        public async Task<IActionResult> FetchLatestNewsOnly(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var articles = await _externalNewsService.FetchLatestNewsAsync(cancellationToken);
+                return Ok(articles);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching latest news");
+                return StatusCode(500, new { Error = "An error occurred while processing the request" });
+            }
+        }
+
+
     }
 }
