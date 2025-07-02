@@ -13,10 +13,12 @@ namespace NewsAggregation.Server.Controllers
     public class NewsController : ControllerBase
     {
         private readonly INewsService _newsService;
+        private readonly INotificationService _notificationService;
 
-        public NewsController(INewsService newsService)
+        public NewsController(INewsService newsService, INotificationService notificationService)
         {
             _newsService = newsService;
+            _notificationService = notificationService;
         }
 
         private int GetCurrentUserId()
@@ -351,6 +353,108 @@ namespace NewsAggregation.Server.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { Message = "An error occurred while reporting the article" });
+            }
+        }
+
+        // GET: api/News/user-preferences
+        [HttpGet("user-preferences")]
+        public async Task<IActionResult> GetUserPreferences()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == 0)
+                    return Unauthorized(new { Message = "Invalid token" });
+
+                // Get user's liked articles
+                var likedArticles = await _newsService.GetLikedArticlesAsync(userId);
+                
+                // Get user's saved articles
+                var savedArticles = await _newsService.GetSavedArticlesAsync(userId);
+                
+                // Get user's read articles
+                var readArticles = await _newsService.GetReadArticlesAsync(userId);
+                
+                // Get user's notification settings
+                var notificationSettings = await _notificationService.GetUserNotificationSettingsAsync(userId);
+                
+                // Get user's keywords
+                var userKeywords = await _newsService.GetUserKeywordsAsync(userId);
+
+                var preferences = new
+                {
+                    LikedArticlesCount = likedArticles.Count(),
+                    SavedArticlesCount = savedArticles.Count(),
+                    ReadArticlesCount = readArticles.Count(),
+                    NotificationSettings = notificationSettings.Select(s => new
+                    {
+                        CategoryId = s.CategoryId,
+                        CategoryName = s.Category?.Name ?? "General",
+                        IsEnabled = s.IsEnabled,
+                        EmailNotifications = s.EmailNotifications,
+                        Keywords = s.Keywords
+                    }),
+                    UserKeywords = userKeywords,
+                    PreferredCategories = likedArticles
+                        .GroupBy(a => a.Category?.Name)
+                        .OrderByDescending(g => g.Count())
+                        .Take(5)
+                        .Select(g => new { Category = g.Key, Count = g.Count() })
+                };
+
+                return Ok(new
+                {
+                    Success = true,
+                    Preferences = preferences
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while retrieving user preferences" });
+            }
+        }
+
+        // GET: api/News/category/{categoryId}/personalized
+        [HttpGet("category/{categoryId:int}/personalized")]
+        public async Task<IActionResult> GetPersonalizedArticlesByCategory(int categoryId, [FromQuery] int count = 10)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == 0)
+                    return Unauthorized(new { Message = "Invalid token" });
+
+                var articles = await _newsService.GetPersonalizedArticlesByCategoryAsync(userId, categoryId, count);
+                var articlesList = articles.Select(a => new
+                {
+                    a.Id,
+                    a.Title,
+                    a.Description,
+                    a.Url,
+                    a.Source,
+                    a.PublishedAt,
+                    a.ImageUrl,
+                    a.Author,
+                    a.Likes,
+                    a.Dislikes,
+                    CategoryName = a.Category?.Name,
+                    a.CategoryId,
+                    IsLiked = false, // TODO: Add logic to check if user liked this article
+                    IsSaved = false  // TODO: Add logic to check if user saved this article
+                }).ToList();
+
+                return Ok(new
+                {
+                    Success = true,
+                    Count = articlesList.Count,
+                    CategoryId = categoryId,
+                    CategoryName = articlesList.FirstOrDefault()?.CategoryName,
+                    Articles = articlesList
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while retrieving personalized articles" });
             }
         }
     }
