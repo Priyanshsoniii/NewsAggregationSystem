@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewsAggregation.Server.Models.Entities;
+using NewsAggregation.Server.Models.Dtos.Admin;
+using NewsAggregation.Server.Models.Dtos.News;
 using NewsAggregation.Server.Services.Interfaces;
+using NewsAggregation.Server.Repository.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
 namespace NewsAggregation.Server.Controllers
@@ -14,15 +17,27 @@ namespace NewsAggregation.Server.Controllers
         private readonly IExternalServerService _externalServerService;
         private readonly ICategoryService _categoryService;
         private readonly ILogger<AdminController> _logger;
+        private readonly IReportRepository _reportRepository;
+        private readonly IFilteredKeywordRepository _filteredKeywordRepository;
+        private readonly INewsRepository _newsRepository;
+        private readonly ICategoryRepository _categoryRepository;
 
         public AdminController(
             IExternalServerService externalServerService,
             ICategoryService categoryService,
-            ILogger<AdminController> logger)
+            ILogger<AdminController> logger,
+            IReportRepository reportRepository,
+            IFilteredKeywordRepository filteredKeywordRepository,
+            INewsRepository newsRepository,
+            ICategoryRepository categoryRepository)
         {
             _externalServerService = externalServerService;
             _categoryService = categoryService;
             _logger = logger;
+            _reportRepository = reportRepository;
+            _filteredKeywordRepository = filteredKeywordRepository;
+            _newsRepository = newsRepository;
+            _categoryRepository = categoryRepository;
         }
 
         // GET: api/Admin/servers
@@ -297,6 +312,76 @@ namespace NewsAggregation.Server.Controllers
                 _logger.LogError(ex, "Error retrieving category with ID: {Id}", id);
                 return StatusCode(500, new { Error = "An error occurred while retrieving category" });
             }
+        }
+
+        // GET: api/Admin/reported-articles
+        [HttpGet("reported-articles")]
+        public async Task<IActionResult> GetReportedArticles()
+        {
+            var allArticles = await _newsRepository.GetAllAsync();
+            var reported = allArticles.Where(a => a.ReportCount > 0).Select(a => new
+            {
+                a.Id,
+                a.Title,
+                a.ReportCount,
+                a.IsHidden
+            }).OrderByDescending(a => a.ReportCount).ToList();
+            return Ok(new { Success = true, Count = reported.Count, ReportedArticles = reported });
+        }
+
+        // PATCH: api/Admin/articles/{id}/hide
+        [HttpPatch("articles/{id:int}/hide")]
+        public async Task<IActionResult> HideArticle(int id, [FromQuery] bool hide = true)
+        {
+            var article = await _newsRepository.GetByIdAsync(id);
+            if (article == null)
+                return NotFound(new { Message = "Article not found" });
+            article.IsHidden = hide;
+            await _newsRepository.UpdateAsync(article);
+            return Ok(new { Success = true, Message = $"Article {(hide ? "hidden" : "unhidden")} successfully" });
+        }
+
+        // PATCH: api/Admin/categories/{id}/hide
+        [HttpPatch("categories/{id:int}/hide")]
+        public async Task<IActionResult> HideCategory(int id, [FromQuery] bool hide = true)
+        {
+            var category = await _categoryRepository.GetByIdAsync(id);
+            if (category == null)
+                return NotFound(new { Message = "Category not found" });
+            category.IsHidden = hide;
+            await _categoryRepository.UpdateAsync(category);
+            return Ok(new { Success = true, Message = $"Category {(hide ? "hidden" : "unhidden")} successfully" });
+        }
+
+        // GET: api/Admin/filtered-keywords
+        [HttpGet("filtered-keywords")]
+        public async Task<IActionResult> GetFilteredKeywords()
+        {
+            var keywords = await _filteredKeywordRepository.GetAllAsync();
+            return Ok(new { Success = true, Count = keywords.Count(), Keywords = keywords });
+        }
+
+        // POST: api/Admin/filtered-keywords
+        [HttpPost("filtered-keywords")]
+        public async Task<IActionResult> AddFilteredKeyword([FromBody] string keyword)
+        {
+            if (string.IsNullOrWhiteSpace(keyword))
+                return BadRequest(new { Message = "Keyword is required" });
+            var exists = await _filteredKeywordRepository.GetByKeywordAsync(keyword);
+            if (exists != null)
+                return Conflict(new { Message = "Keyword already exists" });
+            var created = await _filteredKeywordRepository.CreateAsync(new FilteredKeyword { Keyword = keyword });
+            return Ok(new { Success = true, Keyword = created });
+        }
+
+        // DELETE: api/Admin/filtered-keywords/{id}
+        [HttpDelete("filtered-keywords/{id:int}")]
+        public async Task<IActionResult> DeleteFilteredKeyword(int id)
+        {
+            var result = await _filteredKeywordRepository.DeleteAsync(id);
+            if (!result)
+                return NotFound(new { Message = "Keyword not found" });
+            return Ok(new { Success = true, Message = "Keyword deleted successfully" });
         }
     }
 

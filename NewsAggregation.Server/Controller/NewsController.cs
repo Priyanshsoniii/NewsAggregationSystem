@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using NewsAggregation.Server.Models.Entities;
 using NewsAggregation.Server.Services.Interfaces;
 using System.Security.Claims;
+using NewsAggregation.Server.Models.Dtos.News;
 
 namespace NewsAggregation.Server.Controllers
 {
@@ -221,9 +222,13 @@ namespace NewsAggregation.Server.Controllers
         {
             try
             {
-                var result = await _newsService.LikeArticleAsync(id);
+                var userId = GetCurrentUserId();
+                if (userId == 0)
+                    return Unauthorized(new { Message = "Invalid token" });
+
+                var result = await _newsService.LikeArticleAsync(userId, id);
                 if (!result)
-                    return NotFound(new { Message = "Article not found" });
+                    return BadRequest(new { Success = false, Message = "You have already liked this article or it does not exist." });
 
                 return Ok(new { Success = true, Message = "Article liked successfully" });
             }
@@ -233,21 +238,87 @@ namespace NewsAggregation.Server.Controllers
             }
         }
 
-        // POST: api/News/{id}/dislike
-        [HttpPost("{id:int}/dislike")]
-        public async Task<IActionResult> DislikeArticle(int id)
+        // POST: api/News/{id}/unlike
+        [HttpPost("{id:int}/unlike")]
+        public async Task<IActionResult> UnlikeArticle(int id)
         {
             try
             {
-                var result = await _newsService.DislikeArticleAsync(id);
-                if (!result)
-                    return NotFound(new { Message = "Article not found" });
+                var userId = GetCurrentUserId();
+                if (userId == 0)
+                    return Unauthorized(new { Message = "Invalid token" });
 
-                return Ok(new { Success = true, Message = "Article disliked successfully" });
+                var result = await _newsService.UnlikeArticleAsync(userId, id);
+                if (!result)
+                    return BadRequest(new { Success = false, Message = "You have not liked this article or it does not exist." });
+
+                return Ok(new { Success = true, Message = "Article unliked successfully" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "An error occurred while disliking article" });
+                return StatusCode(500, new { Message = "An error occurred while unliking article" });
+            }
+        }
+
+        // POST: api/News/{id}/read
+        [HttpPost("{id:int}/read")]
+        public async Task<IActionResult> MarkArticleAsRead(int id)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == 0)
+                    return Unauthorized(new { Message = "Invalid token" });
+
+                var result = await _newsService.MarkArticleAsReadAsync(userId, id);
+                if (!result)
+                    return BadRequest(new { Success = false, Message = "You have already marked this article as read or it does not exist." });
+
+                return Ok(new { Success = true, Message = "Article marked as read" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while marking article as read" });
+            }
+        }
+
+        // GET: api/News/recommendations
+        [HttpGet("recommendations")]
+        public async Task<IActionResult> GetRecommendations([FromQuery] int count = 10)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == 0)
+                    return Unauthorized(new { Message = "Invalid token" });
+
+                var articles = await _newsService.GetRecommendedArticlesAsync(userId, count);
+                var articlesList = articles.Select(a => new
+                {
+                    a.Id,
+                    a.Title,
+                    a.Description,
+                    a.Url,
+                    a.Source,
+                    a.PublishedAt,
+                    a.ImageUrl,
+                    a.Author,
+                    a.Likes,
+                    a.Dislikes,
+                    CategoryName = a.Category?.Name,
+                    a.CategoryId
+                }).ToList();
+
+                return Ok(new
+                {
+                    Success = true,
+                    Count = articlesList.Count,
+                    Recommendations = articlesList
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while retrieving recommendations" });
             }
         }
 
@@ -256,6 +327,31 @@ namespace NewsAggregation.Server.Controllers
         {
             await _newsService.ImportArticlesAsync(articles);
             return Ok(new { Message = "Articles imported successfully" });
+        }
+
+        // POST: api/News/report
+        [HttpPost("report")]
+        public async Task<IActionResult> ReportArticle([FromBody] ReportArticleDto dto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var userId = GetCurrentUserId();
+                if (userId == 0)
+                    return Unauthorized(new { Message = "Invalid token" });
+
+                var result = await _newsService.ReportArticleAsync(userId, dto.ArticleId, dto.Reason);
+                if (!result)
+                    return BadRequest(new { Success = false, Message = "You have already reported this article or it is hidden." });
+
+                return Ok(new { Success = true, Message = "Article reported successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while reporting the article" });
+            }
         }
     }
 

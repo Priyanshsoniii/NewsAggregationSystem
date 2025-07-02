@@ -16,6 +16,8 @@ namespace NewsAggregation.Server.Models.Entities
 
         public bool IsActive { get; set; } = true;
 
+        public bool IsHidden { get; set; } = false;
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation Properties

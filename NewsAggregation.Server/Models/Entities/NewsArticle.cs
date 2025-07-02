@@ -40,6 +40,10 @@ namespace NewsAggregation.Server.Models.Entities
 
         public int Dislikes { get; set; } = 0;
 
+        public bool IsHidden { get; set; } = false;
+
+        public int ReportCount { get; set; } = 0;
+
         // Navigation Properties
         public virtual Category Category { get; set; } = null!;
         public virtual ICollection<SavedArticle> SavedByUsers { get; set; } = new List<SavedArticle>();

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NewsAggregation.Server.Data;
 
@@ -11,9 +12,11 @@ using NewsAggregation.Server.Data;
 namespace NewsAggregation.Server.Migrations
 {
     [DbContext(typeof(NewsAggregationContext))]
-    partial class NewsAggregationContextModelSnapshot : ModelSnapshot
+    [Migration("20250702063157_ReportingAndFilteringFeatures")]
+    partial class ReportingAndFilteringFeatures
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -59,7 +62,7 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 7, 2, 6, 44, 39, 785, DateTimeKind.Utc).AddTicks(6800),
+                            CreatedAt = new DateTime(2025, 7, 2, 6, 31, 56, 98, DateTimeKind.Utc).AddTicks(8269),
                             Description = "Business and finance news",
                             IsActive = true,
                             IsHidden = false,
@@ -68,7 +71,7 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2025, 7, 2, 6, 44, 39, 785, DateTimeKind.Utc).AddTicks(6805),
+                            CreatedAt = new DateTime(2025, 7, 2, 6, 31, 56, 98, DateTimeKind.Utc).AddTicks(8273),
                             Description = "Entertainment and celebrity news",
                             IsActive = true,
                             IsHidden = false,
@@ -77,7 +80,7 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2025, 7, 2, 6, 44, 39, 785, DateTimeKind.Utc).AddTicks(6807),
+                            CreatedAt = new DateTime(2025, 7, 2, 6, 31, 56, 98, DateTimeKind.Utc).AddTicks(8275),
                             Description = "Sports news and updates",
                             IsActive = true,
                             IsHidden = false,
@@ -86,7 +89,7 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2025, 7, 2, 6, 44, 39, 785, DateTimeKind.Utc).AddTicks(6808),
+                            CreatedAt = new DateTime(2025, 7, 2, 6, 31, 56, 98, DateTimeKind.Utc).AddTicks(8276),
                             Description = "Technology and innovation news",
                             IsActive = true,
                             IsHidden = false,
@@ -95,7 +98,7 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 5,
-                            CreatedAt = new DateTime(2025, 7, 2, 6, 44, 39, 785, DateTimeKind.Utc).AddTicks(6810),
+                            CreatedAt = new DateTime(2025, 7, 2, 6, 31, 56, 98, DateTimeKind.Utc).AddTicks(8278),
                             Description = "General news and current events",
                             IsActive = true,
                             IsHidden = false,
@@ -157,10 +160,10 @@ namespace NewsAggregation.Server.Migrations
                             Id = 1,
                             ApiKey = "YOUR_NEWS_API_KEY",
                             ApiUrl = "https://newsapi.org/v2/top-headlines",
-                            CreatedAt = new DateTime(2025, 7, 2, 6, 44, 39, 785, DateTimeKind.Utc).AddTicks(7003),
+                            CreatedAt = new DateTime(2025, 7, 2, 6, 31, 56, 98, DateTimeKind.Utc).AddTicks(8427),
                             CurrentHourRequests = 0,
                             IsActive = true,
-                            LastHourReset = new DateTime(2025, 7, 2, 6, 44, 39, 785, DateTimeKind.Utc).AddTicks(7004),
+                            LastHourReset = new DateTime(2025, 7, 2, 6, 31, 56, 98, DateTimeKind.Utc).AddTicks(8427),
                             Name = "NewsAPI",
                             RequestsPerHour = 1000,
                             ServerType = "NewsAPI"
@@ -170,10 +173,10 @@ namespace NewsAggregation.Server.Migrations
                             Id = 2,
                             ApiKey = "2iEVsACWuYsI8wRG8VrwA972129RYibJJRBw0bzG",
                             ApiUrl = "https://api.thenewsapi.com/v1/news/top",
-                            CreatedAt = new DateTime(2025, 7, 2, 6, 44, 39, 785, DateTimeKind.Utc).AddTicks(7008),
+                            CreatedAt = new DateTime(2025, 7, 2, 6, 31, 56, 98, DateTimeKind.Utc).AddTicks(8431),
                             CurrentHourRequests = 0,
                             IsActive = true,
-                            LastHourReset = new DateTime(2025, 7, 2, 6, 44, 39, 785, DateTimeKind.Utc).AddTicks(7008),
+                            LastHourReset = new DateTime(2025, 7, 2, 6, 31, 56, 98, DateTimeKind.Utc).AddTicks(8431),
                             Name = "The News API",
                             RequestsPerHour = 1000,
                             ServerType = "TheNewsAPI"
@@ -183,10 +186,10 @@ namespace NewsAggregation.Server.Migrations
                             Id = 3,
                             ApiKey = "af3ce09176fb4fd3be6fcfd1e000776c",
                             ApiUrl = "https://us-central1-symbolic-gift-98004.cloudfunctions.net/newsapi",
-                            CreatedAt = new DateTime(2025, 7, 2, 6, 44, 39, 785, DateTimeKind.Utc).AddTicks(7010),
+                            CreatedAt = new DateTime(2025, 7, 2, 6, 31, 56, 98, DateTimeKind.Utc).AddTicks(8475),
                             CurrentHourRequests = 0,
                             IsActive = true,
-                            LastHourReset = new DateTime(2025, 7, 2, 6, 44, 39, 785, DateTimeKind.Utc).AddTicks(7010),
+                            LastHourReset = new DateTime(2025, 7, 2, 6, 31, 56, 98, DateTimeKind.Utc).AddTicks(8475),
                             Name = "Firebase API",
                             RequestsPerHour = 1000,
                             ServerType = "Firebase"
@@ -432,67 +435,13 @@ namespace NewsAggregation.Server.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 7, 2, 6, 44, 39, 785, DateTimeKind.Utc).AddTicks(7032),
+                            CreatedAt = new DateTime(2025, 7, 2, 6, 31, 56, 98, DateTimeKind.Utc).AddTicks(8495),
                             Email = "admin@newsaggregator.com",
                             IsActive = true,
-                            PasswordHash = "$2a$11$F.Sk.utzFNLlaZnxXH/3JOWtSYt5uzlctdxWEv7rtHMMM230PefEu",
+                            PasswordHash = "$2a$11$LBqoiEObHfGV7TH/jWdCquiAFXp/WRmTTmxxV0PHp9Jj2aXPvRJ5G",
                             Role = "Admin",
                             Username = "admin"
                         });
-                });
-
-            modelBuilder.Entity("NewsAggregation.Server.Models.Entities.UserArticleLike", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("LikedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("NewsArticleId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NewsArticleId");
-
-                    b.HasIndex("UserId", "NewsArticleId")
-                        .IsUnique();
-
-                    b.ToTable("UserArticleLikes");
-                });
-
-            modelBuilder.Entity("NewsAggregation.Server.Models.Entities.UserArticleRead", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("NewsArticleId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ReadAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NewsArticleId");
-
-                    b.HasIndex("UserId", "NewsArticleId")
-                        .IsUnique();
-
-                    b.ToTable("UserArticleReads");
                 });
 
             modelBuilder.Entity("NewsAggregation.Server.Models.Entities.UserNotificationSetting", b =>
@@ -592,44 +541,6 @@ namespace NewsAggregation.Server.Migrations
 
                     b.HasOne("NewsAggregation.Server.Models.Entities.User", "User")
                         .WithMany("SavedArticles")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("NewsArticle");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("NewsAggregation.Server.Models.Entities.UserArticleLike", b =>
-                {
-                    b.HasOne("NewsAggregation.Server.Models.Entities.NewsArticle", "NewsArticle")
-                        .WithMany()
-                        .HasForeignKey("NewsArticleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("NewsAggregation.Server.Models.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("NewsArticle");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("NewsAggregation.Server.Models.Entities.UserArticleRead", b =>
-                {
-                    b.HasOne("NewsAggregation.Server.Models.Entities.NewsArticle", "NewsArticle")
-                        .WithMany()
-                        .HasForeignKey("NewsArticleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("NewsAggregation.Server.Models.Entities.User", "User")
-                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

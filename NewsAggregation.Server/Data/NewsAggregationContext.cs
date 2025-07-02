@@ -16,6 +16,10 @@ namespace NewsAggregation.Server.Data
         public DbSet<ExternalServer> ExternalServers { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<UserNotificationSetting> UserNotificationSettings { get; set; }
+        public DbSet<Report> Reports { get; set; }
+        public DbSet<FilteredKeyword> FilteredKeywords { get; set; }
+        public DbSet<UserArticleLike> UserArticleLikes { get; set; }
+        public DbSet<UserArticleRead> UserArticleReads { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -83,6 +87,50 @@ namespace NewsAggregation.Server.Data
                     .WithMany(p => p.UserNotificationSettings)
                     .HasForeignKey(d => d.CategoryId)
                     .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<Report>(entity =>
+            {
+                entity.HasIndex(e => new { e.UserId, e.NewsArticleId });
+                entity.HasOne(r => r.User)
+                    .WithMany()
+                    .HasForeignKey(r => r.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(r => r.NewsArticle)
+                    .WithMany()
+                    .HasForeignKey(r => r.NewsArticleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<FilteredKeyword>(entity =>
+            {
+                entity.HasIndex(e => e.Keyword).IsUnique();
+            });
+
+            modelBuilder.Entity<UserArticleLike>(entity =>
+            {
+                entity.HasIndex(e => new { e.UserId, e.NewsArticleId }).IsUnique();
+                entity.HasOne(l => l.User)
+                    .WithMany()
+                    .HasForeignKey(l => l.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(l => l.NewsArticle)
+                    .WithMany()
+                    .HasForeignKey(l => l.NewsArticleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UserArticleRead>(entity =>
+            {
+                entity.HasIndex(e => new { e.UserId, e.NewsArticleId }).IsUnique();
+                entity.HasOne(r => r.User)
+                    .WithMany()
+                    .HasForeignKey(r => r.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(r => r.NewsArticle)
+                    .WithMany()
+                    .HasForeignKey(r => r.NewsArticleId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             SeedData(modelBuilder);
