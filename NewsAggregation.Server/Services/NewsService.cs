@@ -60,6 +60,26 @@ namespace NewsAggregation.Server.Services
             return await _newsRepository.RemoveSavedArticleAsync(userId, articleId);
         }
 
+        public async Task<bool> LikeArticleAsync(int articleId)
+        {
+            var article = await _newsRepository.GetByIdAsync(articleId);
+            if (article == null) return false;
+
+            article.Likes++;
+            await _newsRepository.UpdateAsync(article);
+            return true;
+        }
+
+        public async Task<bool> DislikeArticleAsync(int articleId)
+        {
+            var article = await _newsRepository.GetByIdAsync(articleId);
+            if (article == null) return false;
+
+            article.Dislikes++;
+            await _newsRepository.UpdateAsync(article);
+            return true;
+        }
+
 
         public async Task ImportArticlesAsync(List<NewsArticle> articlesFromApi)
         {

@@ -71,6 +71,7 @@ services.AddScoped<IEmailService, EmailService>();
 services.AddScoped<IExternalNewsService, ExternalNewsService>();
 services.AddScoped<IExternalServerService, ExternalServerService>();
 services.AddScoped<ICategoryService, CategoryService>();
+services.AddScoped<INotificationService, NotificationService>();
 
 // HTTP Client for external API calls
 services.AddHttpClient();
