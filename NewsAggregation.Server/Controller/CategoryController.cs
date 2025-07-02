@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NewsAggregation.Server.Models.Entities;
 using NewsAggregation.Server.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace NewsAggregation.Server.Controllers
 {
@@ -60,6 +61,16 @@ namespace NewsAggregation.Server.Controllers
                 return NotFound(new { Message = "Category not found or already deleted" });
 
             return Ok(new { Message = "Category deleted successfully" });
+        }
+
+        [HttpPut("{id:int}/keywords")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateCategoryKeywords(int id, [FromBody] string keywords)
+        {
+            var updated = await _categoryService.UpdateCategoryKeywordsAsync(id, keywords);
+            if (updated == null)
+                return NotFound(new { Message = "Category not found" });
+            return Ok(new { Success = true, Category = updated });
         }
     }
 }

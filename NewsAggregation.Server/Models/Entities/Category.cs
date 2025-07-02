@@ -14,6 +14,9 @@ namespace NewsAggregation.Server.Models.Entities
         [StringLength(255)]
         public string? Description { get; set; }
 
+        [StringLength(255)]
+        public string? Keywords { get; set; } // Comma-separated keywords for rule-based categorization
+
         public bool IsActive { get; set; } = true;
 
         public bool IsHidden { get; set; } = false;

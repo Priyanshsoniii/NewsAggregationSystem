@@ -34,6 +34,7 @@ namespace NewsAggregation.Server.Data
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.HasIndex(e => e.Name).IsUnique();
+                entity.Property(e => e.Keywords).HasMaxLength(255);
             });
 
             modelBuilder.Entity<NewsArticle>(entity =>

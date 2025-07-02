@@ -9,5 +9,6 @@ namespace NewsAggregation.Server.Services.Interfaces
         Task<Category> CreateCategoryAsync(Category category);
         Task<Category> UpdateCategoryAsync(Category category);
         Task<bool> DeleteCategoryAsync(int id);
+        Task<Category?> UpdateCategoryKeywordsAsync(int id, string keywords);
     }
 }

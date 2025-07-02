@@ -14,10 +14,10 @@ namespace NewsAggregation.Server.Services.Interfaces
         Task<bool> SaveArticleAsync(int userId, int articleId);
         Task<bool> RemoveSavedArticleAsync(int userId, int articleId);
         Task<bool> LikeArticleAsync(int userId, int articleId);
-        Task<bool> DislikeArticleAsync(int articleId);
         Task<bool> MarkArticleAsReadAsync(int userId, int articleId);
         Task<IEnumerable<NewsArticle>> GetRecommendedArticlesAsync(int userId, int count = 10);
         Task ImportArticlesAsync(List<NewsArticle> articles);
         Task<bool> ReportArticleAsync(int userId, int articleId, string? reason, int reportThreshold = 3);
+        Task<bool> UnlikeArticleAsync(int userId, int articleId);
     }
 }

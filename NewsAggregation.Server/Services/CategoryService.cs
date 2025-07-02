@@ -50,5 +50,14 @@ namespace NewsAggregation.Server.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<Category?> UpdateCategoryKeywordsAsync(int id, string keywords)
+        {
+            var category = await _context.Categories.FindAsync(id);
+            if (category == null) return null;
+            category.Keywords = keywords;
+            await _context.SaveChangesAsync();
+            return category;
+        }
     }
 }

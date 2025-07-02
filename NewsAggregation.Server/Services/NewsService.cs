@@ -216,13 +216,23 @@ namespace NewsAggregation.Server.Services
         private async Task<int> GetCategoryIdForArticleAsync(NewsArticle article)
         {
             var categories = await _categoryRepository.GetAllAsync();
-            if (article.Title.Contains("sport", StringComparison.OrdinalIgnoreCase))
-                return categories.FirstOrDefault(c => c.Name == "Sports")?.Id ?? categories.First().Id;
-            if (article.Title.Contains("business", StringComparison.OrdinalIgnoreCase))
-                return categories.FirstOrDefault(c => c.Name == "Business")?.Id ?? categories.First().Id;
-            // Add more rules as needed
-
-            return categories.First().Id; // Default
+            var title = article.Title?.ToLower() ?? string.Empty;
+            var description = article.Description?.ToLower() ?? string.Empty;
+            foreach (var category in categories)
+            {
+                if (!string.IsNullOrWhiteSpace(category.Keywords))
+                {
+                    var keywords = category.Keywords.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    foreach (var keyword in keywords)
+                    {
+                        if (title.Contains(keyword.ToLower()) || description.Contains(keyword.ToLower()))
+                        {
+                            return category.Id;
+                        }
+                    }
+                }
+            }
+            return categories.First().Id; // Default to first category if no match
         }
     }
 }
