@@ -324,5 +324,49 @@ namespace NewsAggregation.Server.Controllers
                 return StatusCode(500, new { Message = "An error occurred while sending test email." });
             }
         }
+
+        // POST: api/Notification/test-email-direct
+        [HttpPost("test-email-direct")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SendTestEmailDirect([FromBody] TestEmailRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.Email))
+                {
+                    return BadRequest(new { Success = false, Message = "Email address is required." });
+                }
+
+                _logger.LogInformation("Testing email configuration for: {Email}", request.Email);
+
+                var emailService = HttpContext.RequestServices.GetRequiredService<IEmailService>();
+                var sent = await emailService.SendEmailAsync(
+                    request.Email,
+                    "Test Email from News Aggregation System",
+                    "<h2>Test Email</h2><p>This is a test email from your News Aggregation System. If you received this email, your email configuration is working correctly!</p><p>Sent at: " + DateTime.Now + "</p>"
+                );
+
+                if (sent)
+                {
+                    _logger.LogInformation("Test email sent successfully to {Email}", request.Email);
+                    return Ok(new { Success = true, Message = "Test email sent successfully to " + request.Email });
+                }
+                else
+                {
+                    _logger.LogError("Failed to send test email to {Email}", request.Email);
+                    return StatusCode(500, new { Success = false, Message = "Failed to send test email. Please check your email settings and application logs." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending direct test email to {Email}: {ErrorMessage}", request.Email, ex.Message);
+                return StatusCode(500, new { Success = false, Message = "An error occurred while sending test email: " + ex.Message });
+            }
+        }
     }
-} 
+
+    public class TestEmailRequest
+    {
+        public string Email { get; set; } = string.Empty;
+    }
+}
