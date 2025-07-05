@@ -75,12 +75,12 @@ namespace NewsAggregation.Server.Repository
 
         public async Task<IEnumerable<NewsArticle>> GetTodayHeadlinesAsync()
         {
-            var today = DateTime.Today;
-            var tomorrow = today.AddDays(1);
+            // Show articles from the last 7 days instead of just today
+            var sevenDaysAgo = DateTime.Today.AddDays(-7);
 
             return await _context.NewsArticles
                 .Include(n => n.Category)
-                .Where(n => n.PublishedAt >= today && n.PublishedAt < tomorrow)
+                .Where(n => n.PublishedAt >= sevenDaysAgo)
                 .OrderByDescending(n => n.PublishedAt)
                 .ToListAsync();
         }

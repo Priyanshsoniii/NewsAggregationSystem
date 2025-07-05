@@ -45,6 +45,7 @@ namespace NewsAggregation.Server.Services
         {
             using var scope = _serviceProvider.CreateScope();
             var externalNewsService = scope.ServiceProvider.GetRequiredService<ExternalNewsService>();
+            var newsService = scope.ServiceProvider.GetRequiredService<INewsService>();
 
             _logger.LogInformation("Starting news aggregation at {Time}", DateTime.UtcNow);
 
@@ -55,9 +56,15 @@ namespace NewsAggregation.Server.Services
 
                 _logger.LogInformation("Fetched {Count} news articles", newsArticles.Count());
 
-                // Here you would typically save to database or process the articles
-                // For now, just log the titles
-                foreach (var article in newsArticles.Take(5)) // Log first 5 titles
+                // Save articles to database
+                if (newsArticles.Any())
+                {
+                    await newsService.ImportArticlesAsync(newsArticles.ToList());
+                    _logger.LogInformation("Successfully saved {Count} articles to database", newsArticles.Count());
+                }
+
+                // Log first 5 titles for debugging
+                foreach (var article in newsArticles.Take(5))
                 {
                     _logger.LogInformation("Article: {Title}", article.Title);
                 }

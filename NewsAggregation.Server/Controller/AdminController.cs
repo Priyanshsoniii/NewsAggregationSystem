@@ -21,6 +21,8 @@ namespace NewsAggregation.Server.Controllers
         private readonly IFilteredKeywordRepository _filteredKeywordRepository;
         private readonly INewsRepository _newsRepository;
         private readonly ICategoryRepository _categoryRepository;
+        private readonly IExternalNewsService _externalNewsService;
+        private readonly INewsService _newsService;
 
         public AdminController(
             IExternalServerService externalServerService,
@@ -29,7 +31,9 @@ namespace NewsAggregation.Server.Controllers
             IReportRepository reportRepository,
             IFilteredKeywordRepository filteredKeywordRepository,
             INewsRepository newsRepository,
-            ICategoryRepository categoryRepository)
+            ICategoryRepository categoryRepository,
+            IExternalNewsService externalNewsService,
+            INewsService newsService)
         {
             _externalServerService = externalServerService;
             _categoryService = categoryService;
@@ -38,6 +42,8 @@ namespace NewsAggregation.Server.Controllers
             _filteredKeywordRepository = filteredKeywordRepository;
             _newsRepository = newsRepository;
             _categoryRepository = categoryRepository;
+            _externalNewsService = externalNewsService;
+            _newsService = newsService;
         }
 
         // GET: api/Admin/servers
@@ -47,7 +53,7 @@ namespace NewsAggregation.Server.Controllers
             try
             {
                 var servers = await _externalServerService.GetAllServersAsync();
-                
+
                 var serverList = servers.Select(s => new
                 {
                     s.Id,
@@ -383,6 +389,40 @@ namespace NewsAggregation.Server.Controllers
                 return NotFound(new { Message = "Keyword not found" });
             return Ok(new { Success = true, Message = "Keyword deleted successfully" });
         }
+
+        // POST: api/Admin/aggregate-news
+        [HttpPost("aggregate-news")]
+        public async Task<IActionResult> AggregateNews()
+        {
+            try
+            {
+                _logger.LogInformation("Manual news aggregation triggered at {Time}", DateTime.UtcNow);
+
+                // Fetch news from external sources
+                var newsArticles = await _externalNewsService.FetchLatestNewsAsync();
+
+                _logger.LogInformation("Fetched {Count} news articles", newsArticles.Count());
+
+                // Save articles to database
+                if (newsArticles.Any())
+                {
+                    await _newsService.ImportArticlesAsync(newsArticles.ToList());
+                    _logger.LogInformation("Successfully saved {Count} articles to database", newsArticles.Count());
+                }
+
+                return Ok(new
+                {
+                    Message = "News aggregation completed successfully",
+                    ArticlesFetched = newsArticles.Count(),
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during manual news aggregation");
+                return StatusCode(500, new { Error = "An error occurred during news aggregation" });
+            }
+        }
     }
 
     // DTOs for Admin operations
@@ -400,19 +440,19 @@ namespace NewsAggregation.Server.Controllers
     {
         [Required]
         public string Name { get; set; } = string.Empty;
-        
+
         [Required]
         [Url]
         public string ApiUrl { get; set; } = string.Empty;
-        
+
         [Required]
         public string ApiKey { get; set; } = string.Empty;
-        
+
         [Required]
         public string ServerType { get; set; } = string.Empty;
-        
+
         public bool IsActive { get; set; } = true;
-        
+
         public int RequestsPerHour { get; set; } = 1000;
     }
 
@@ -421,8 +461,8 @@ namespace NewsAggregation.Server.Controllers
         [Required]
         [StringLength(50)]
         public string Name { get; set; } = string.Empty;
-        
+
         [StringLength(255)]
         public string? Description { get; set; }
     }
-} 
+}
