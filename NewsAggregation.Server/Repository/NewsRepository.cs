@@ -32,7 +32,7 @@ namespace NewsAggregation.Server.Repository
         {
             return await _context.NewsArticles
                 .Include(n => n.Category)
-                .OrderByDescending(n => n.PublishedAt)
+                .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
         }
 
@@ -41,7 +41,7 @@ namespace NewsAggregation.Server.Repository
             return await _context.NewsArticles
                 .Include(n => n.Category)
                 .Where(n => n.CategoryId == categoryId)
-                .OrderByDescending(n => n.PublishedAt)
+                .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
         }
 
@@ -49,8 +49,8 @@ namespace NewsAggregation.Server.Repository
         {
             return await _context.NewsArticles
                 .Include(n => n.Category)
-                .Where(n => n.PublishedAt >= startDate && n.PublishedAt <= endDate)
-                .OrderByDescending(n => n.PublishedAt)
+                .Where(n => n.CreatedAt >= startDate && n.CreatedAt <= endDate)
+                .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
         }
 
@@ -62,26 +62,25 @@ namespace NewsAggregation.Server.Repository
                            (n.Description != null && n.Description.Contains(query)));
 
             if (startDate.HasValue)
-                articlesQuery = articlesQuery.Where(n => n.PublishedAt >= startDate.Value);
+                articlesQuery = articlesQuery.Where(n => n.CreatedAt >= startDate.Value);
 
             if (endDate.HasValue)
-                articlesQuery = articlesQuery.Where(n => n.PublishedAt <= endDate.Value);
+                articlesQuery = articlesQuery.Where(n => n.CreatedAt <= endDate.Value);
 
             return await articlesQuery
                 .OrderByDescending(n => n.Likes - n.Dislikes)
-                .ThenByDescending(n => n.PublishedAt)
+                .ThenByDescending(n => n.CreatedAt)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<NewsArticle>> GetTodayHeadlinesAsync()
         {
-            // Show articles from the last 7 days instead of just today
-            var sevenDaysAgo = DateTime.Today.AddDays(-7);
+            var today = DateTime.Today;
 
             return await _context.NewsArticles
                 .Include(n => n.Category)
-                .Where(n => n.PublishedAt >= sevenDaysAgo)
-                .OrderByDescending(n => n.PublishedAt)
+                .Where(n => n.CreatedAt >= today)
+                .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
         }
 
@@ -116,7 +115,7 @@ namespace NewsAggregation.Server.Repository
                     .ThenInclude(na => na.Category)
                 .Where(sa => sa.UserId == userId)
                 .Select(sa => sa.NewsArticle)
-                .OrderByDescending(na => na.PublishedAt)
+                .OrderByDescending(na => na.CreatedAt)
                 .ToListAsync();
         }
 
