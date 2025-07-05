@@ -309,6 +309,7 @@ namespace NewsAggregation.Server.Services
                 
                 foreach (var user in allUsers)
                 {
+                    // Check for keyword-based notifications
                     var userKeywords = await GetUserNotificationKeywordsAsync(user.Id);
                     
                     if (userKeywords.Any() && article.Description != null)
@@ -323,9 +324,22 @@ namespace NewsAggregation.Server.Services
                         
                         if (matchingKeywords.Any())
                         {
-                            // Send notification to user
+                            // Send keyword-based notification to user
                             await _notificationService.SendKeywordBasedNotificationsAsync(user.Id, matchingKeywords, article);
                         }
+                    }
+
+                    // Check for category-based notifications
+                    var userSettings = await _notificationService.GetUserNotificationSettingsAsync(user.Id);
+                    var categorySetting = userSettings.FirstOrDefault(s => s.CategoryId == article.CategoryId);
+                    
+                    if (categorySetting != null && categorySetting.IsEnabled && categorySetting.EmailNotifications)
+                    {
+                        // Send category-based notification
+                        var title = $"New {article.Category?.Name ?? "Article"} Available: {article.Title}";
+                        var message = $"A new article in the {article.Category?.Name ?? "selected"} category has been published: {article.Title}. Read more at: {article.Url}";
+                        
+                        await _notificationService.SendEmailNotificationAsync(user.Id, title, message, article.Id);
                     }
                 }
             }
@@ -333,7 +347,7 @@ namespace NewsAggregation.Server.Services
             {
                 // Log error but don't fail the import process
                 // In a real application, you'd want proper logging here
-                Console.WriteLine($"Error sending keyword notifications: {ex.Message}");
+                Console.WriteLine($"Error sending notifications: {ex.Message}");
             }
         }
 
