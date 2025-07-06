@@ -22,8 +22,7 @@ namespace NewsAggregation.Server.Services
         {
             try
             {
-                _logger.LogInformation("Attempting to send email to {Email} using SMTP server {SmtpServer}:{SmtpPort}", 
-                    toEmail, _emailSettings.SmtpServer, _emailSettings.SmtpPort);
+                _logger.LogDebug("Sending email to {Email}", toEmail);
 
                 var message = new MimeMessage();
                 message.From.Add(new MailboxAddress(_emailSettings.FromName, _emailSettings.FromEmail));
@@ -38,16 +37,9 @@ namespace NewsAggregation.Server.Services
 
                 using var client = new SmtpClient();
                 
-                _logger.LogInformation("Connecting to SMTP server...");
                 await client.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, SecureSocketOptions.StartTls);
-                
-                _logger.LogInformation("Authenticating with username: {Username}", _emailSettings.Username);
                 await client.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password);
-                
-                _logger.LogInformation("Sending email...");
                 await client.SendAsync(message);
-                
-                _logger.LogInformation("Disconnecting from SMTP server...");
                 await client.DisconnectAsync(true);
 
                 _logger.LogInformation("Email sent successfully to {Email}", toEmail);

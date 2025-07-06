@@ -9,7 +9,7 @@ namespace NewsAggregation.Server.Services
     {
         private readonly ILogger<NewsAggregationService> _logger;
         private readonly IServiceProvider _serviceProvider;
-        private readonly TimeSpan _period = TimeSpan.FromMinutes(30); // Run every 30 minutes
+        private readonly TimeSpan _period = TimeSpan.FromHours(4); // Run every 4 hours
 
         public NewsAggregationService(ILogger<NewsAggregationService> logger, IServiceProvider serviceProvider)
         {
@@ -19,7 +19,7 @@ namespace NewsAggregation.Server.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("News Aggregation Service started");
+            _logger.LogInformation("News Aggregation Service started - running every 4 hours");
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -47,29 +47,21 @@ namespace NewsAggregation.Server.Services
             var externalNewsService = scope.ServiceProvider.GetRequiredService<ExternalNewsService>();
             var newsService = scope.ServiceProvider.GetRequiredService<INewsService>();
 
-            _logger.LogInformation("Starting news aggregation at {Time}", DateTime.UtcNow);
-
             try
             {
                 // Fetch news from external sources
                 var newsArticles = await externalNewsService.FetchLatestNewsAsync(cancellationToken);
 
-                _logger.LogInformation("Fetched {Count} news articles", newsArticles.Count());
-
                 // Save articles to database
                 if (newsArticles.Any())
                 {
                     await newsService.ImportArticlesAsync(newsArticles.ToList());
-                    _logger.LogInformation("Successfully saved {Count} articles to database", newsArticles.Count());
+                    _logger.LogInformation("News aggregation: Fetched and saved {Count} articles", newsArticles.Count());
                 }
-
-                // Log first 5 titles for debugging
-                foreach (var article in newsArticles.Take(5))
+                else
                 {
-                    _logger.LogInformation("Article: {Title}", article.Title);
+                    _logger.LogDebug("News aggregation: No new articles found");
                 }
-
-                _logger.LogInformation("News aggregation completed successfully at {Time}", DateTime.UtcNow);
             }
             catch (Exception ex)
             {

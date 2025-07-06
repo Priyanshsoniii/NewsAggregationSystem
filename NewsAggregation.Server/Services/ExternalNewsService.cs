@@ -111,7 +111,7 @@ namespace NewsAggregation.Server.Services
                     .OrderByDescending(a => a.PublishedAt)
                     .ToList();
 
-                _logger.LogInformation("Successfully fetched {Count} unique articles from external sources", uniqueArticles.Count);
+                _logger.LogDebug("Fetched {Count} unique articles from external sources", uniqueArticles.Count);
 
                 return uniqueArticles;
             }
@@ -151,7 +151,7 @@ namespace NewsAggregation.Server.Services
                     ImageUrl = article.UrlToImage
                 }).ToList() ?? new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
 
-                _logger.LogInformation("Fetched {Count} articles from NewsAPI", articles.Count);
+                _logger.LogDebug("Fetched {Count} articles from NewsAPI", articles.Count);
                 return articles;
             }
             catch (Exception ex)
@@ -184,7 +184,7 @@ namespace NewsAggregation.Server.Services
                 }
             }
 
-            _logger.LogInformation("Fetched {Count} articles from RSS feeds", articles.Count);
+            _logger.LogDebug("Fetched {Count} articles from RSS feeds", articles.Count);
             return articles;
         }
 
