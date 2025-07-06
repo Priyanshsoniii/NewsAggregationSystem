@@ -295,6 +295,14 @@ namespace NewsAggregation.Server.Controllers
                     return Unauthorized(new { Message = "Invalid token" });
 
                 var articles = await _newsService.GetRecommendedArticlesAsync(userId, count);
+
+                // Get user's liked and saved articles
+                var likedArticles = await _newsService.GetLikedArticlesAsync(userId);
+                var savedArticles = await _newsService.GetSavedArticlesAsync(userId);
+
+                var likedIds = likedArticles.Select(a => a.Id).ToHashSet();
+                var savedIds = savedArticles.Select(a => a.Id).ToHashSet();
+
                 var articlesList = articles.Select(a => new
                 {
                     a.Id,
@@ -308,7 +316,9 @@ namespace NewsAggregation.Server.Controllers
                     a.Likes,
                     a.Dislikes,
                     CategoryName = a.Category?.Name,
-                    a.CategoryId
+                    a.CategoryId,
+                    IsLiked = likedIds.Contains(a.Id),
+                    IsSaved = savedIds.Contains(a.Id)
                 }).ToList();
 
                 return Ok(new
@@ -368,16 +378,16 @@ namespace NewsAggregation.Server.Controllers
 
                 // Get user's liked articles
                 var likedArticles = await _newsService.GetLikedArticlesAsync(userId);
-                
+
                 // Get user's saved articles
                 var savedArticles = await _newsService.GetSavedArticlesAsync(userId);
-                
+
                 // Get user's read articles
                 var readArticles = await _newsService.GetReadArticlesAsync(userId);
-                
+
                 // Get user's notification settings
                 var notificationSettings = await _notificationService.GetUserNotificationSettingsAsync(userId);
-                
+
                 // Get user's keywords
                 var userKeywords = await _newsService.GetUserKeywordsAsync(userId);
 
