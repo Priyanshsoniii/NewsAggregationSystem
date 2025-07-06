@@ -272,6 +272,34 @@ namespace NewsAggregation.Server.Controllers
             }
         }
 
+        // PUT: api/Notification/settings/keywords
+        [HttpPut("settings/keywords")]
+        public async Task<IActionResult> UpdateGeneralKeywords([FromBody] UpdateKeywordsDto dto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var userId = GetCurrentUserId();
+                if (userId == 0)
+                    return Unauthorized(new { Message = "Invalid token" });
+
+                var result = await _notificationService.UpdateKeywordsAsync(userId, null, dto.Keywords);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Keywords updated successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating keywords");
+                return StatusCode(500, new { Message = "An error occurred while updating keywords" });
+            }
+        }
+
         // PUT: api/Notification/settings
         [HttpPut("settings")]
         public async Task<IActionResult> UpdateNotificationSettings([FromBody] object settingsDto)
