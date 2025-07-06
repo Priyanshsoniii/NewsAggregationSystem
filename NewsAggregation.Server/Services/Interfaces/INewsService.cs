@@ -20,7 +20,8 @@ namespace NewsAggregation.Server.Services.Interfaces
         Task<bool> ReportArticleAsync(int userId, int articleId, string? reason, int reportThreshold = 3);
         Task<bool> UnlikeArticleAsync(int userId, int articleId);
         Task<int> ReCategorizeAllArticlesAsync();
-        
+        Task<int> FixInvalidCategoriesAsync();
+
         // User preference methods for personalization
         Task<IEnumerable<NewsArticle>> GetLikedArticlesAsync(int userId);
         Task<IEnumerable<NewsArticle>> GetReadArticlesAsync(int userId);

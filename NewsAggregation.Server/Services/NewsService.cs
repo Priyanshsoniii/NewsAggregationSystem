@@ -453,6 +453,28 @@ namespace NewsAggregation.Server.Services
             return updatedCount;
         }
 
+        public async Task<int> FixInvalidCategoriesAsync()
+        {
+            var articles = await _newsRepository.GetAllAsync();
+            var categories = await _categoryRepository.GetAllAsync();
+            var validCategoryIds = categories.Select(c => c.Id).ToHashSet();
+
+            int fixedCount = 0;
+            foreach (var article in articles)
+            {
+                // Check if the article's CategoryId is valid
+                if (!validCategoryIds.Contains(article.CategoryId))
+                {
+                    // Re-categorize the article
+                    int newCategoryId = await GetCategoryIdForArticleAsync(article);
+                    article.CategoryId = newCategoryId;
+                    await _newsRepository.UpdateAsync(article);
+                    fixedCount++;
+                }
+            }
+            return fixedCount;
+        }
+
         public async Task<IEnumerable<NewsArticle>> GetLikedArticlesAsync(int userId)
         {
             var likedArticleIds = (await _userArticleLikeRepository.GetByUserAsync(userId)).Select(l => l.NewsArticleId);
