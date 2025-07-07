@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewsAggregation.Server.Models.Dtos.User;
-using NewsAggregation.Server.Models.Entities;
 using NewsAggregation.Server.Services.Interfaces;
 using System.Security.Claims;
 
@@ -73,7 +72,6 @@ namespace NewsAggregation.Server.Controllers
                 if (user == null)
                     return NotFound(new { Message = "User not found" });
 
-                // Update username if provided
                 if (!string.IsNullOrEmpty(updateDto.Username))
                 {
                     var existingUser = await _userService.GetUserByUsernameAsync(updateDto.Username);
@@ -83,7 +81,6 @@ namespace NewsAggregation.Server.Controllers
                     user.Username = updateDto.Username;
                 }
 
-                // Update email if provided
                 if (!string.IsNullOrEmpty(updateDto.Email))
                 {
                     var existingUser = await _userService.GetUserByEmailAsync(updateDto.Email);
@@ -93,7 +90,6 @@ namespace NewsAggregation.Server.Controllers
                     user.Email = updateDto.Email;
                 }
 
-                // Update password if provided
                 if (!string.IsNullOrEmpty(updateDto.CurrentPassword) && !string.IsNullOrEmpty(updateDto.NewPassword))
                 {
                     if (!BCrypt.Net.BCrypt.Verify(updateDto.CurrentPassword, user.PasswordHash))

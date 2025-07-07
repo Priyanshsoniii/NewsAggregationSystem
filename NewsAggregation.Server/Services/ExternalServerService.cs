@@ -39,7 +39,6 @@ namespace NewsAggregation.Server.Services
             if (existingServer == null)
                 throw new ArgumentException("Server not found");
 
-            // Update only allowed fields
             existingServer.Name = server.Name;
             existingServer.ApiUrl = server.ApiUrl;
             existingServer.ApiKey = server.ApiKey;

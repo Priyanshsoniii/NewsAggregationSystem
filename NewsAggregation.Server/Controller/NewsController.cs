@@ -295,8 +295,6 @@ namespace NewsAggregation.Server.Controllers
                     return Unauthorized(new { Message = "Invalid token" });
 
                 var articles = await _newsService.GetRecommendedArticlesAsync(userId, count);
-
-                // Get user's liked and saved articles
                 var likedArticles = await _newsService.GetLikedArticlesAsync(userId);
                 var savedArticles = await _newsService.GetSavedArticlesAsync(userId);
 
@@ -376,19 +374,14 @@ namespace NewsAggregation.Server.Controllers
                 if (userId == 0)
                     return Unauthorized(new { Message = "Invalid token" });
 
-                // Get user's liked articles
                 var likedArticles = await _newsService.GetLikedArticlesAsync(userId);
 
-                // Get user's saved articles
                 var savedArticles = await _newsService.GetSavedArticlesAsync(userId);
 
-                // Get user's read articles
                 var readArticles = await _newsService.GetReadArticlesAsync(userId);
 
-                // Get user's notification settings
                 var notificationSettings = await _notificationService.GetUserNotificationSettingsAsync(userId);
 
-                // Get user's keywords
                 var userKeywords = await _newsService.GetUserKeywordsAsync(userId);
 
                 var preferences = new
@@ -449,8 +442,8 @@ namespace NewsAggregation.Server.Controllers
                     a.Dislikes,
                     CategoryName = a.Category?.Name,
                     a.CategoryId,
-                    IsLiked = false, // TODO: Add logic to check if user liked this article
-                    IsSaved = false  // TODO: Add logic to check if user saved this article
+                    IsLiked = false, 
+                    IsSaved = false  
                 }).ToList();
 
                 return Ok(new
@@ -467,10 +460,5 @@ namespace NewsAggregation.Server.Controllers
                 return StatusCode(500, new { Message = "An error occurred while retrieving personalized articles" });
             }
         }
-    }
-
-    public class SaveArticleDto
-    {
-        public int ArticleId { get; set; }
     }
 }

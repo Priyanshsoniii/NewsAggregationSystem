@@ -120,7 +120,7 @@ namespace NewsAggregation.Server.Services
                 var user = await _userService.GetUserByIdAsync(userId);
                 if (user == null) return false;
 
-                // Create in-app notification
+            
                 var notification = new Notification
                 {
                     UserId = userId,
@@ -134,7 +134,7 @@ namespace NewsAggregation.Server.Services
 
                 await _notificationRepository.CreateAsync(notification);
 
-                // Send email notification
+              
                 if (user.Email != null)
                 {
                     await _emailService.SendEmailAsync(user.Email, title, message);

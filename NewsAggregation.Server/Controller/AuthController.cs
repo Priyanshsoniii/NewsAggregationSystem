@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using NewsAggregation.Server.Models.Dtos;
 using NewsAggregation.Server.Services.Interfaces;
 

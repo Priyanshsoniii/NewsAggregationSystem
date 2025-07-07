@@ -23,11 +23,10 @@ namespace NewsAggregation.Server.Models.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [StringLength(50)]
-        public string NotificationType { get; set; } = "General"; // General, Article, System
+        public string NotificationType { get; set; } = "General"; 
 
         public int? RelatedArticleId { get; set; }
 
-        // Navigation Properties
         public virtual User User { get; set; } = null!;
 
         [ForeignKey("RelatedArticleId")]

@@ -137,42 +137,35 @@ namespace NewsAggregation.Server.Services
 
         public async Task<IEnumerable<NewsArticle>> GetRecommendedArticlesAsync(int userId, int count = 10)
         {
-            // Get user behavior data
             var liked = (await _userArticleLikeRepository.GetByUserAsync(userId)).Select(l => l.NewsArticleId).ToHashSet();
             var read = (await _userArticleReadRepository.GetByUserAsync(userId)).Select(r => r.NewsArticleId).ToHashSet();
             var saved = (await _newsRepository.GetSavedArticlesByUserAsync(userId)).Select(a => a.Id).ToHashSet();
 
-            // Get user notification keywords for personalization
             var userKeywords = await GetUserNotificationKeywordsAsync(userId);
 
             var allArticles = await _newsRepository.GetAllAsync();
             var filtered = await FilterArticlesAsync(allArticles);
 
-            // Enhanced recommendation algorithm with multiple scoring factors
             var scoredArticles = new List<(NewsArticle Article, double Score)>();
 
             foreach (var article in filtered)
             {
                 double score = 0;
 
-                // Base score for recency (higher weight for newer articles)
                 var hoursSincePublished = (DateTime.UtcNow - article.PublishedAt).TotalHours;
                 if (hoursSincePublished <= 24)
-                    score += 30; // Very recent articles get high score
+                    score += 30; 
                 else if (hoursSincePublished <= 72)
-                    score += 20; // Recent articles get medium score
+                    score += 20; 
                 else
-                    score += Math.Max(0, 15 - (hoursSincePublished / 24)); // Older articles get decreasing score
-
-                // High score for user's liked articles
+                    score += Math.Max(0, 15 - (hoursSincePublished / 24));
+   
                 if (liked.Contains(article.Id))
                     score += 100;
 
-                // High score for user's saved articles
                 if (saved.Contains(article.Id))
                     score += 80;
 
-                // Medium score for articles matching user's notification keywords
                 if (userKeywords.Any() && article.Description != null)
                 {
                     var titleLower = article.Title.ToLower();
@@ -184,12 +177,10 @@ namespace NewsAggregation.Server.Services
 
                     if (matchingKeywords.Any())
                     {
-                        // More matching keywords = higher score
                         score += matchingKeywords.Count * 25;
                     }
                 }
 
-                // Bonus score for articles from categories user has enabled notifications for
                 var userNotificationSettings = await _notificationService.GetUserNotificationSettingsAsync(userId);
                 var enabledCategories = userNotificationSettings
                     .Where(s => s.IsEnabled && s.CategoryId.HasValue)
@@ -199,22 +190,18 @@ namespace NewsAggregation.Server.Services
                 if (enabledCategories.Contains(article.CategoryId))
                     score += 30;
 
-                // Penalty for already read articles (but not too harsh)
                 if (read.Contains(article.Id))
                     score -= 25;
 
-                // Bonus for popular articles (likes - dislikes)
                 var popularityScore = article.Likes - article.Dislikes;
-                score += Math.Min(Math.Max(popularityScore, 0), 25); // Cap at 25 points
+                score += Math.Min(Math.Max(popularityScore, 0), 25); 
 
-                // Bonus for articles with good descriptions
                 if (!string.IsNullOrWhiteSpace(article.Description) && article.Description.Length > 50)
                     score += 10;
 
                 scoredArticles.Add((article, score));
             }
 
-            // Sort by score and take top articles
             var recommended = scoredArticles
                 .OrderByDescending(x => x.Score)
                 .Take(count)
@@ -241,7 +228,6 @@ namespace NewsAggregation.Server.Services
                 }
                 catch
                 {
-                    // If JSON deserialization fails, try comma-separated format
                     var commaKeywords = setting.Keywords.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                     keywords.AddRange(commaKeywords);
                 }
@@ -256,7 +242,6 @@ namespace NewsAggregation.Server.Services
             if (article == null || article.IsHidden)
                 return false;
 
-            // Prevent duplicate reports by the same user
             var existingReport = await _reportRepository.GetByUserAndArticleAsync(userId, articleId);
             if (existingReport != null)
                 return false;
@@ -270,17 +255,14 @@ namespace NewsAggregation.Server.Services
             };
             await _reportRepository.CreateAsync(report);
 
-            // Update report count
             article.ReportCount = await _reportRepository.GetReportCountForArticleAsync(articleId);
             if (article.ReportCount >= reportThreshold)
             {
                 article.IsHidden = true;
-                // Optionally, notify admin here
                 await _notificationService.SendEmailNotificationAsync(1, "Article Hidden Due to Reports", $"Article '{article.Title}' was automatically hidden after {article.ReportCount} reports.", article.Id);
             }
             await _newsRepository.UpdateAsync(article);
 
-            // Notify admin of new report
             await _notificationService.SendEmailNotificationAsync(1, "Article Reported", $"Article '{article.Title}' was reported by a user. Reason: {reason}", article.Id);
 
             return true;
@@ -306,7 +288,6 @@ namespace NewsAggregation.Server.Services
 
                 await _newsRepository.CreateAsync(article);
 
-                // Send keyword-based notifications to users
                 await SendKeywordBasedNotificationsForArticleAsync(article);
             }
         }
@@ -315,12 +296,10 @@ namespace NewsAggregation.Server.Services
         {
             try
             {
-                // Get all users with notification settings
                 var allUsers = await _userService.GetAllUsersAsync();
 
                 foreach (var user in allUsers)
                 {
-                    // Check for keyword-based notifications
                     var userKeywords = await GetUserNotificationKeywordsAsync(user.Id);
 
                     if (userKeywords.Any() && article.Description != null)
@@ -328,25 +307,21 @@ namespace NewsAggregation.Server.Services
                         var titleLower = article.Title.ToLower();
                         var descriptionLower = article.Description.ToLower();
 
-                        // Check if article matches any of user's keywords
                         var matchingKeywords = userKeywords
                             .Where(keyword => titleLower.Contains(keyword.ToLower()) || descriptionLower.Contains(keyword.ToLower()))
                             .ToList();
 
                         if (matchingKeywords.Any())
                         {
-                            // Send keyword-based notification to user
                             await _notificationService.SendKeywordBasedNotificationsAsync(user.Id, matchingKeywords, article);
                         }
                     }
 
-                    // Check for category-based notifications
                     var userSettings = await _notificationService.GetUserNotificationSettingsAsync(user.Id);
                     var categorySetting = userSettings.FirstOrDefault(s => s.CategoryId == article.CategoryId);
 
                     if (categorySetting != null && categorySetting.IsEnabled && categorySetting.EmailNotifications)
                     {
-                        // Send category-based notification
                         var title = $"New {article.Category?.Name ?? "Article"} Available: {article.Title}";
                         var message = $"A new article in the {article.Category?.Name ?? "selected"} category has been published: {article.Title}. Read more at: {article.Url}";
 
@@ -356,8 +331,6 @@ namespace NewsAggregation.Server.Services
             }
             catch (Exception ex)
             {
-                // Log error but don't fail the import process
-                // In a real application, you'd want proper logging here
                 Console.WriteLine($"Error sending notifications: {ex.Message}");
             }
         }
@@ -372,7 +345,6 @@ namespace NewsAggregation.Server.Services
             var description = article.Description?.ToLower() ?? string.Empty;
             var combinedText = $"{title} {description}";
 
-            // Enhanced keyword matching with scoring
             var categoryScores = new Dictionary<int, int>();
 
             foreach (var category in categories)
@@ -386,15 +358,12 @@ namespace NewsAggregation.Server.Services
                     {
                         var keywordLower = keyword.ToLower().Trim();
 
-                        // Title matches get higher score
                         if (title.Contains(keywordLower))
                             score += 3;
 
-                        // Description matches get medium score
                         if (description.Contains(keywordLower))
                             score += 2;
 
-                        // Combined text matches get lower score
                         if (combinedText.Contains(keywordLower))
                             score += 1;
                     }
@@ -404,13 +373,11 @@ namespace NewsAggregation.Server.Services
                 }
             }
 
-            // Return the category with the highest score, or first category as fallback
             if (categoryScores.Any())
             {
                 return categoryScores.OrderByDescending(x => x.Value).First().Key;
             }
 
-            // Fallback logic for common patterns
             if (title.Contains("israel") || title.Contains("gaza") || title.Contains("hamas") ||
                 title.Contains("netanyahu") || title.Contains("ceasefire") || title.Contains("war") ||
                 title.Contains("politics") || title.Contains("government") || title.Contains("election"))
@@ -433,7 +400,7 @@ namespace NewsAggregation.Server.Services
                 if (sportsCategory != null) return sportsCategory.Id;
             }
 
-            return categories.First().Id; // Final fallback
+            return categories.First().Id;
         }
 
         public async Task<int> ReCategorizeAllArticlesAsync()
@@ -462,10 +429,8 @@ namespace NewsAggregation.Server.Services
             int fixedCount = 0;
             foreach (var article in articles)
             {
-                // Check if the article's CategoryId is valid
                 if (!validCategoryIds.Contains(article.CategoryId))
                 {
-                    // Re-categorize the article
                     int newCategoryId = await GetCategoryIdForArticleAsync(article);
                     article.CategoryId = newCategoryId;
                     await _newsRepository.UpdateAsync(article);
@@ -516,38 +481,33 @@ namespace NewsAggregation.Server.Services
 
         public async Task<IEnumerable<NewsArticle>> GetPersonalizedArticlesByCategoryAsync(int userId, int categoryId, int count = 10)
         {
-            // Get user behavior data
             var liked = (await _userArticleLikeRepository.GetByUserAsync(userId)).Select(l => l.NewsArticleId).ToHashSet();
             var read = (await _userArticleReadRepository.GetByUserAsync(userId)).Select(r => r.NewsArticleId).ToHashSet();
             var saved = (await _newsRepository.GetSavedArticlesByUserAsync(userId)).Select(a => a.Id).ToHashSet();
 
-            // Get user notification keywords
             var userKeywords = await GetUserNotificationKeywordsAsync(userId);
 
-            // Get articles from the specific category
             var categoryArticles = await _newsRepository.GetByCategoryAsync(categoryId);
             var filtered = await FilterArticlesAsync(categoryArticles);
 
-            // Score articles based on user preferences
             var scoredArticles = new List<(NewsArticle Article, double Score)>();
 
             foreach (var article in filtered)
             {
                 double score = 0;
 
-                // Base score for recency
                 var daysSincePublished = (DateTime.UtcNow - article.PublishedAt).TotalDays;
                 score += Math.Max(0, 10 - daysSincePublished);
 
-                // High score for user's liked articles in this category
+
                 if (liked.Contains(article.Id))
                     score += 50;
 
-                // High score for user's saved articles in this category
+               
                 if (saved.Contains(article.Id))
                     score += 40;
 
-                // Medium score for articles matching user's keywords
+                
                 if (userKeywords.Any() && article.Description != null)
                 {
                     var titleLower = article.Title.ToLower();
@@ -563,17 +523,16 @@ namespace NewsAggregation.Server.Services
                     }
                 }
 
-                // Penalty for already read articles
+             
                 if (read.Contains(article.Id))
                     score -= 10;
 
-                // Bonus for popular articles
                 score += Math.Min(article.Likes, 20);
 
                 scoredArticles.Add((article, score));
             }
 
-            // Return top scored articles
+          
             return scoredArticles
                 .OrderByDescending(x => x.Score)
                 .Take(count)

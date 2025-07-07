@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace NewsAggregation.Server.Models.Dtos.Admin
 {
     public class UpdateServerDto

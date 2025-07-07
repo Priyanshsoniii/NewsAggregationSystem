@@ -8,7 +8,6 @@ namespace NewsAggregation.Server.Data
         public NewsAggregationContext(DbContextOptions<NewsAggregationContext> options) : base(options)
         {
         }
-
         public DbSet<User> Users { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<NewsArticle> NewsArticles { get; set; }

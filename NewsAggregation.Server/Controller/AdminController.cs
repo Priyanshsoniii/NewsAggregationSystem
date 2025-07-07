@@ -2,10 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewsAggregation.Server.Models.Entities;
 using NewsAggregation.Server.Models.Dtos.Admin;
-using NewsAggregation.Server.Models.Dtos.News;
 using NewsAggregation.Server.Services.Interfaces;
 using NewsAggregation.Server.Repository.Interfaces;
-using System.ComponentModel.DataAnnotations;
 
 namespace NewsAggregation.Server.Controllers
 {
@@ -132,7 +130,6 @@ namespace NewsAggregation.Server.Controllers
                 if (existingServer == null)
                     return NotFound(new { Message = "Server not found" });
 
-                // Update only the fields provided
                 existingServer.Name = updateDto.Name ?? existingServer.Name;
                 existingServer.ApiUrl = updateDto.ApiUrl ?? existingServer.ApiUrl;
                 existingServer.ApiKey = updateDto.ApiKey ?? existingServer.ApiKey;
@@ -398,12 +395,10 @@ namespace NewsAggregation.Server.Controllers
             {
                 _logger.LogInformation("Manual news aggregation triggered at {Time}", DateTime.UtcNow);
 
-                // Fetch news from external sources
                 var newsArticles = await _externalNewsService.FetchLatestNewsAsync();
 
                 _logger.LogInformation("Fetched {Count} news articles", newsArticles.Count());
 
-                // Save articles to database
                 if (newsArticles.Any())
                 {
                     await _newsService.ImportArticlesAsync(newsArticles.ToList());
@@ -423,46 +418,5 @@ namespace NewsAggregation.Server.Controllers
                 return StatusCode(500, new { Error = "An error occurred during news aggregation" });
             }
         }
-    }
-
-    // DTOs for Admin operations
-    public class UpdateServerDto
-    {
-        public string? Name { get; set; }
-        public string? ApiUrl { get; set; }
-        public string? ApiKey { get; set; }
-        public string? ServerType { get; set; }
-        public bool? IsActive { get; set; }
-        public int? RequestsPerHour { get; set; }
-    }
-
-    public class CreateServerDto
-    {
-        [Required]
-        public string Name { get; set; } = string.Empty;
-
-        [Required]
-        [Url]
-        public string ApiUrl { get; set; } = string.Empty;
-
-        [Required]
-        public string ApiKey { get; set; } = string.Empty;
-
-        [Required]
-        public string ServerType { get; set; } = string.Empty;
-
-        public bool IsActive { get; set; } = true;
-
-        public int RequestsPerHour { get; set; } = 1000;
-    }
-
-    public class CreateCategoryDto
-    {
-        [Required]
-        [StringLength(50)]
-        public string Name { get; set; } = string.Empty;
-
-        [StringLength(255)]
-        public string? Description { get; set; }
     }
 }

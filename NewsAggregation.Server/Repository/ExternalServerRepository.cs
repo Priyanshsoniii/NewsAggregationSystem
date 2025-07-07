@@ -50,7 +50,7 @@ namespace NewsAggregation.Server.Repository
             var server = await _context.ExternalServers.FindAsync(id);
             if (server == null) return false;
 
-            server.IsActive = false; // Soft delete
+            server.IsActive = false;
             await _context.SaveChangesAsync();
             return true;
         }

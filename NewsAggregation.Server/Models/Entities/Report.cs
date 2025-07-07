@@ -19,7 +19,6 @@ namespace NewsAggregation.Server.Models.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation Properties
         public virtual User User { get; set; } = null!;
         public virtual NewsArticle NewsArticle { get; set; } = null!;
     }

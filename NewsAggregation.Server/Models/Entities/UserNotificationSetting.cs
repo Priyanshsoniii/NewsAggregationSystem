@@ -17,7 +17,7 @@ namespace NewsAggregation.Server.Models.Entities
         public bool IsEnabled { get; set; } = true;
 
         [Column(TypeName = "text")]
-        public string? Keywords { get; set; } // JSON array of keywords
+        public string? Keywords { get; set; }
 
         public bool EmailNotifications { get; set; } = true;
 
@@ -25,7 +25,6 @@ namespace NewsAggregation.Server.Models.Entities
 
         public DateTime? UpdatedAt { get; set; }
 
-        // Navigation Properties
         public virtual User User { get; set; } = null!;
         public virtual Category? Category { get; set; }
     }

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NewsAggregation.Server.Models.Dtos.Notification;
-using NewsAggregation.Server.Models.Entities;
 using NewsAggregation.Server.Services.Interfaces;
 using System.Security.Claims;
 
@@ -310,8 +309,6 @@ namespace NewsAggregation.Server.Controllers
                 if (userId == 0)
                     return Unauthorized(new { Message = "Invalid token" });
 
-                // For now, we'll just return success since the backend structure is different
-                // In a real implementation, you'd map the flat structure to category-based settings
                 return Ok(new
                 {
                     Success = true,
@@ -391,10 +388,5 @@ namespace NewsAggregation.Server.Controllers
                 return StatusCode(500, new { Success = false, Message = "An error occurred while sending test email: " + ex.Message });
             }
         }
-    }
-
-    public class TestEmailRequest
-    {
-        public string Email { get; set; } = string.Empty;
     }
 }

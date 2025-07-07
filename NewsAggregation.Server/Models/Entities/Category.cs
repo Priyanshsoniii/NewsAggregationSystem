@@ -15,7 +15,7 @@ namespace NewsAggregation.Server.Models.Entities
         public string? Description { get; set; }
 
         [StringLength(255)]
-        public string? Keywords { get; set; } // Comma-separated keywords for rule-based categorization
+        public string? Keywords { get; set; } 
 
         public bool IsActive { get; set; } = true;
 
@@ -23,7 +23,6 @@ namespace NewsAggregation.Server.Models.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation Properties
         public virtual ICollection<NewsArticle> NewsArticles { get; set; } = new List<NewsArticle>();
         public virtual ICollection<UserNotificationSetting> UserNotificationSettings { get; set; } = new List<UserNotificationSetting>();
     }

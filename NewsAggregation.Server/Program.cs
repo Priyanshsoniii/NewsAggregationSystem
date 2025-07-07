@@ -14,20 +14,19 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ===== CONFIGURATION =====
 var configuration = builder.Configuration;
 var services = builder.Services;
 
-// Bind configuration
+
 var appSettings = new AppSettings();
 configuration.Bind(appSettings);
 services.Configure<AppSettings>(configuration);
 
-// ===== DATABASE CONFIGURATION =====
+
 services.AddDbContext<NewsAggregationContext>(options =>
     options.UseSqlServer(appSettings.ConnectionStrings.DefaultConnection));
 
-// ===== JWT AUTHENTICATION =====
+
 var jwtSettings = appSettings.JwtSettings;
 var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
 
@@ -55,8 +54,7 @@ services.AddAuthentication(options =>
 
 services.AddAuthorization();
 
-// ===== DEPENDENCY INJECTION =====
-// Repositories
+
 services.AddScoped<IUserRepository, UserRepository>();
 services.AddScoped<INewsRepository, NewsRepository>();
 services.AddScoped<IExternalServerRepository, ExternalServerRepository>();
@@ -67,7 +65,7 @@ services.AddScoped<IFilteredKeywordRepository, FilteredKeywordRepository>();
 services.AddScoped<IUserArticleLikeRepository, UserArticleLikeRepository>();
 services.AddScoped<IUserArticleReadRepository, UserArticleReadRepository>();
 
-// Services
+
 services.AddScoped<IAuthService, AuthService>();
 services.AddScoped<IUserService, UserService>();
 services.AddScoped<INewsService, NewsService>();
@@ -80,32 +78,31 @@ services.AddScoped<ExternalNewsService, ExternalNewsService>();
 builder.Services.AddScoped<IExternalNewsService, ExternalNewsService>();
 builder.Services.AddScoped<ExternalNewsService>();
 
-// HTTP Client for external API calls
+
 services.AddHttpClient();
 
-// Background Services
+
 services.AddHostedService<NewsAggregationService>();
 
-// ===== API CONFIGURATION =====
+
 services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Handle circular references
+     
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 
-        // Use camelCase for JSON properties
+       
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 
-        // Handle null values
+        
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 
-        // Write indented JSON for better readability in development
+     
         options.JsonSerializerOptions.WriteIndented = true;
     });
 
 services.AddEndpointsApiExplorer();
 
-// Swagger Configuration
 services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -115,7 +112,7 @@ services.AddSwaggerGen(c =>
         Description = "API for News Aggregation System"
     });
 
-    // JWT Authentication in Swagger
+    
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token.",
@@ -141,7 +138,6 @@ services.AddSwaggerGen(c =>
     });
 });
 
-// CORS Configuration
 services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", builder =>
@@ -169,15 +165,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// ===== DATABASE INITIALIZATION =====
+
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<NewsAggregationContext>();
 
     context.Database.EnsureCreated();
-
-    // Run migrations if any
-    // context.Database.Migrate();
 }
 
 Console.WriteLine("News Aggregation Server is starting...");

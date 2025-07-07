@@ -21,7 +21,7 @@ namespace NewsAggregation.Server.Models.Entities
 
         [Required]
         [StringLength(20)]
-        public string Role { get; set; } = "User"; // Admin or User
+        public string Role { get; set; } = "User"; 
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

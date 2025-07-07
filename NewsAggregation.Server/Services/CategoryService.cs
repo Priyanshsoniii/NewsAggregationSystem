@@ -46,7 +46,7 @@ namespace NewsAggregation.Server.Services
             var category = await _context.Categories.FindAsync(id);
             if (category == null) return false;
 
-            category.IsActive = false; // Soft delete
+            category.IsActive = false; 
             await _context.SaveChangesAsync();
             return true;
         }

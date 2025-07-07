@@ -25,7 +25,7 @@ namespace NewsAggregation.Server.Models.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [StringLength(50)]
-        public string ServerType { get; set; } = string.Empty; // NewsAPI, TheNewsAPI, Firebase
+        public string ServerType { get; set; } = string.Empty;
 
         public int RequestsPerHour { get; set; } = 1000;
 

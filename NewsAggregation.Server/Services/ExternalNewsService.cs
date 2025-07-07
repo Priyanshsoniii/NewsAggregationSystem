@@ -1,10 +1,8 @@
 ﻿using System.ServiceModel.Syndication;
 using System.Text.Json;
 using System.Xml;
+using NewsAggregation.Server.Models.Dtos.NewsApi;
 using NewsAggregation.Server.Services.Interfaces;
-using System.ServiceModel.Syndication;
-using System.Xml;
-using NewsAggregation.Server.Models.Entities;
 
 namespace NewsAggregation.Server.Services
 {
@@ -39,7 +37,6 @@ namespace NewsAggregation.Server.Services
                         Url = item.Links.FirstOrDefault()?.Uri.ToString() ?? "",
                         Source = new Uri(feedUrl).Host,
                         PublishedAt = item.PublishDate.UtcDateTime != DateTime.MinValue ? item.PublishDate.UtcDateTime : DateTime.UtcNow,
-                        // You can map more fields if needed
                     });
                 }
             }
@@ -49,42 +46,6 @@ namespace NewsAggregation.Server.Services
             }
             return articles;
         }
-
-        //public async Task<IEnumerable<NewsArticle>> FetchLatestNewsAsync(CancellationToken cancellationToken = default)
-        //{
-        //    var articles = new List<NewsArticle>();
-
-        //    try
-        //    {
-        //        var tasks = new List<Task<IEnumerable<NewsArticle>>>
-        //        {
-        //            FetchFromNewsAPIAsync(cancellationToken),
-        //            FetchFromRSSFeedsAsync(cancellationToken)
-        //        };
-
-        //        var results = await Task.WhenAll(tasks);
-
-        //        foreach (var result in results)
-        //        {
-        //            articles.AddRange(result);
-        //        }
-
-        //        var uniqueArticles = articles
-        //            .GroupBy(a => a.Title.ToLowerInvariant())
-        //            .Select(g => g.First())
-        //            .OrderByDescending(a => a.PublishedAt)
-        //            .ToList();
-
-        //        _logger.LogInformation("Successfully fetched {Count} unique articles from external sources", uniqueArticles.Count);
-
-        //        return uniqueArticles;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error fetching news from external sources");
-        //        return new List<NewsArticle>();
-        //    }
-        //}
 
         public async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> FetchLatestNewsAsync(CancellationToken cancellationToken = default)
         {
@@ -186,43 +147,6 @@ namespace NewsAggregation.Server.Services
 
             _logger.LogDebug("Fetched {Count} articles from RSS feeds", articles.Count);
             return articles;
-        }
-
-        // Data models (keep as is or use your shared NewsArticle model)
-        public class NewsArticle
-        {
-            public string Title { get; set; } = string.Empty;
-            public string Description { get; set; } = string.Empty;
-            public string Url { get; set; } = string.Empty;
-            public string Source { get; set; } = string.Empty;
-            public DateTime PublishedAt { get; set; }
-            public string? ImageUrl { get; set; }
-            public List<string> Categories { get; set; } = new();
-        }
-
-        public class NewsApiResponse
-        {
-            public string Status { get; set; } = string.Empty;
-            public int TotalResults { get; set; }
-            public List<NewsApiArticle> Articles { get; set; } = new();
-        }
-
-        public class NewsApiArticle
-        {
-            public NewsApiSource? Source { get; set; }
-            public string? Author { get; set; }
-            public string? Title { get; set; }
-            public string? Description { get; set; }
-            public string? Url { get; set; }
-            public string? UrlToImage { get; set; }
-            public string? PublishedAt { get; set; }
-            public string? Content { get; set; }
-        }
-
-        public class NewsApiSource
-        {
-            public string? Id { get; set; }
-            public string? Name { get; set; }
         }
     }
 }

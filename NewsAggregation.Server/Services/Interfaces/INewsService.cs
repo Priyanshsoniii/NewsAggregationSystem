@@ -21,8 +21,6 @@ namespace NewsAggregation.Server.Services.Interfaces
         Task<bool> UnlikeArticleAsync(int userId, int articleId);
         Task<int> ReCategorizeAllArticlesAsync();
         Task<int> FixInvalidCategoriesAsync();
-
-        // User preference methods for personalization
         Task<IEnumerable<NewsArticle>> GetLikedArticlesAsync(int userId);
         Task<IEnumerable<NewsArticle>> GetReadArticlesAsync(int userId);
         Task<List<string>> GetUserKeywordsAsync(int userId);

@@ -1,7 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using NewsAggregation.Server.Models.Entities;
-using NewsAggregation.Server.Services;
 using NewsAggregation.Server.Services.Interfaces;
 
 namespace NewsAggregation.Server.Controllers
