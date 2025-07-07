@@ -11,6 +11,7 @@ using NewsAggregation.Server.Repository.Interfaces;
 using NewsAggregation.Server.Repository;
 using NewsAggregation.Server.Services;
 using System.Text.Json;
+using NewsAggregation.Server.Services.ExternalClients;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +72,7 @@ services.AddScoped<IUserService, UserService>();
 services.AddScoped<INewsService, NewsService>();
 services.AddScoped<IEmailService, EmailService>();
 services.AddScoped<IExternalNewsService, ExternalNewsService>();
+services.AddScoped<ITheNewsApiClient, TheNewsApiClient>();
 services.AddScoped<IExternalServerService, ExternalServerService>();
 services.AddScoped<ICategoryService, CategoryService>();
 services.AddScoped<INotificationService, NotificationService>();

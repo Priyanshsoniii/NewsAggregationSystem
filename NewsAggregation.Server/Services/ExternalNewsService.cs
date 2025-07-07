@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Xml;
 using NewsAggregation.Server.Models.Dtos.NewsApi;
 using NewsAggregation.Server.Services.Interfaces;
+using NewsAggregation.Server.Exceptions;
 
 namespace NewsAggregation.Server.Services
 {
@@ -12,13 +13,20 @@ namespace NewsAggregation.Server.Services
         private readonly ILogger<ExternalNewsService> _logger;
         private readonly IConfiguration _configuration;
         private readonly IExternalServerService _externalServerService;
+        private readonly ITheNewsApiClient _theNewsApiClient;
 
-        public ExternalNewsService(HttpClient httpClient, ILogger<ExternalNewsService> logger, IConfiguration configuration, IExternalServerService externalServerService)
+        public ExternalNewsService(
+            HttpClient httpClient, 
+            ILogger<ExternalNewsService> logger, 
+            IConfiguration configuration, 
+            IExternalServerService externalServerService,
+            ITheNewsApiClient theNewsApiClient)
         {
             _httpClient = httpClient;
             _logger = logger;
             _configuration = configuration;
             _externalServerService = externalServerService;
+            _theNewsApiClient = theNewsApiClient;
         }
 
         private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> ParseRSSFeedAsync(string feedUrl, CancellationToken cancellationToken)
@@ -56,10 +64,11 @@ namespace NewsAggregation.Server.Services
             try
             {
                 var tasks = new List<Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>>>
-        {
-            FetchFromNewsAPIAsync(cancellationToken),
-            FetchFromRSSFeedsAsync(cancellationToken)
-        };
+                {
+                    FetchFromNewsAPIAsync(cancellationToken),
+                    FetchFromTheNewsApiAsync(cancellationToken),
+                    FetchFromRSSFeedsAsync(cancellationToken)
+                };
 
                 var results = await Task.WhenAll(tasks);
 
@@ -128,14 +137,35 @@ namespace NewsAggregation.Server.Services
             }
         }
 
+        private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> FetchFromTheNewsApiAsync(CancellationToken cancellationToken)
+        {
+            try
+            { 
+                return await _theNewsApiClient.FetchTopNewsAsync(cancellationToken);
+            }
+            catch (TheNewsApiConfigurationException ex)
+            {
+                _logger.LogWarning(ex, "The News API configuration error: {Message}", ex.Message);
+                return Enumerable.Empty<NewsAggregation.Server.Models.Entities.NewsArticle>();
+            }
+            catch (TheNewsApiException ex)
+            {
+                _logger.LogError(ex, "The News API error: {Message}", ex.Message);
+                return Enumerable.Empty<NewsAggregation.Server.Models.Entities.NewsArticle>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error with The News API: {Message}", ex.Message);
+                return Enumerable.Empty<NewsAggregation.Server.Models.Entities.NewsArticle>();
+            }
+        }
+
         private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> FetchFromRSSFeedsAsync(CancellationToken cancellationToken)
         {
             var articles = new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
             var rssFeeds = new[]
             {
-               "https://rss.cnn.com/rss/edition.rss",
-               "https://feeds.bbci.co.uk/news/rss.xml",
-               "https://www.reuters.com/tools/rss"
+               "https://feeds.bbci.co.uk/news/rss.xml"
            };
 
             foreach (var feedUrl in rssFeeds)
