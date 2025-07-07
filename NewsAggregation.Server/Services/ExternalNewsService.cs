@@ -11,12 +11,14 @@ namespace NewsAggregation.Server.Services
         private readonly HttpClient _httpClient;
         private readonly ILogger<ExternalNewsService> _logger;
         private readonly IConfiguration _configuration;
+        private readonly IExternalServerService _externalServerService;
 
-        public ExternalNewsService(HttpClient httpClient, ILogger<ExternalNewsService> logger, IConfiguration configuration)
+        public ExternalNewsService(HttpClient httpClient, ILogger<ExternalNewsService> logger, IConfiguration configuration, IExternalServerService externalServerService)
         {
             _httpClient = httpClient;
             _logger = logger;
             _configuration = configuration;
+            _externalServerService = externalServerService;
         }
 
         private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> ParseRSSFeedAsync(string feedUrl, CancellationToken cancellationToken)
@@ -91,6 +93,7 @@ namespace NewsAggregation.Server.Services
                 if (string.IsNullOrEmpty(apiKey))
                 {
                     _logger.LogWarning("NewsAPI key not configured, skipping NewsAPI fetch");
+                    await _externalServerService.UpdateServerLastAccessedAsync(1);
                     return new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
                 }
 
@@ -113,6 +116,9 @@ namespace NewsAggregation.Server.Services
                 }).ToList() ?? new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
 
                 _logger.LogDebug("Fetched {Count} articles from NewsAPI", articles.Count);
+
+                await _externalServerService.UpdateServerLastAccessedAsync(1);
+
                 return articles;
             }
             catch (Exception ex)

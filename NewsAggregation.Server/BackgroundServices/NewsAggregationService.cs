@@ -1,7 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using NewsAggregation.Server.Services.Interfaces;
+﻿using NewsAggregation.Server.Services.Interfaces;
 
 namespace NewsAggregation.Server.Services
 {
@@ -44,15 +41,13 @@ namespace NewsAggregation.Server.Services
         private async Task AggregateNewsAsync(CancellationToken cancellationToken)
         {
             using var scope = _serviceProvider.CreateScope();
-            var externalNewsService = scope.ServiceProvider.GetRequiredService<ExternalNewsService>();
+            var externalNewsService = scope.ServiceProvider.GetRequiredService<IExternalNewsService>();
             var newsService = scope.ServiceProvider.GetRequiredService<INewsService>();
 
             try
             {
-                // Fetch news from external sources
                 var newsArticles = await externalNewsService.FetchLatestNewsAsync(cancellationToken);
 
-                // Save articles to database
                 if (newsArticles.Any())
                 {
                     await newsService.ImportArticlesAsync(newsArticles.ToList());

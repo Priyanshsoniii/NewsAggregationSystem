@@ -155,7 +155,8 @@ namespace NewsAggregation.Server.Data
                     ApiUrl = "https://newsapi.org/v2/top-headlines",
                     ApiKey = "YOUR_NEWS_API_KEY",
                     ServerType = "NewsAPI",
-                    IsActive = true
+                    IsActive = true,
+                    LastAccessed = DateTime.Now
                 },
                 new ExternalServer
                 {
@@ -164,7 +165,8 @@ namespace NewsAggregation.Server.Data
                     ApiUrl = "https://api.thenewsapi.com/v1/news/top",
                     ApiKey = "2iEVsACWuYsI8wRG8VrwA972129RYibJJRBw0bzG",
                     ServerType = "TheNewsAPI",
-                    IsActive = true
+                    IsActive = true,
+                    LastAccessed = DateTime.Now
                 },
                 new ExternalServer
                 {
@@ -173,7 +175,8 @@ namespace NewsAggregation.Server.Data
                     ApiUrl = "https://us-central1-symbolic-gift-98004.cloudfunctions.net/newsapi",
                     ApiKey = "af3ce09176fb4fd3be6fcfd1e000776c",
                     ServerType = "Firebase",
-                    IsActive = true
+                    IsActive = true,
+                    LastAccessed = DateTime.Now
                 }
             );
 
