@@ -65,6 +65,8 @@ services.AddScoped<IReportRepository, ReportRepository>();
 services.AddScoped<IFilteredKeywordRepository, FilteredKeywordRepository>();
 services.AddScoped<IUserArticleLikeRepository, UserArticleLikeRepository>();
 services.AddScoped<IUserArticleReadRepository, UserArticleReadRepository>();
+services.AddScoped<INewsApiClient, NewsApiClient>();
+services.AddScoped<IBbcRssClient, BbcRssClient>();
 
 
 services.AddScoped<IAuthService, AuthService>();

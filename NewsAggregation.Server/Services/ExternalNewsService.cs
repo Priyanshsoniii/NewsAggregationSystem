@@ -9,82 +9,45 @@ namespace NewsAggregation.Server.Services
 {
     public class ExternalNewsService : IExternalNewsService
     {
-        private readonly HttpClient _httpClient;
         private readonly ILogger<ExternalNewsService> _logger;
-        private readonly IConfiguration _configuration;
-        private readonly IExternalServerService _externalServerService;
         private readonly ITheNewsApiClient _theNewsApiClient;
+        private readonly INewsApiClient _newsApiClient;
+        private readonly IBbcRssClient _bbcRssClient;
 
         public ExternalNewsService(
-            HttpClient httpClient, 
-            ILogger<ExternalNewsService> logger, 
-            IConfiguration configuration, 
-            IExternalServerService externalServerService,
-            ITheNewsApiClient theNewsApiClient)
+            ILogger<ExternalNewsService> logger,
+            ITheNewsApiClient theNewsApiClient,
+            INewsApiClient newsApiClient,
+            IBbcRssClient bbcRssClient)
         {
-            _httpClient = httpClient;
             _logger = logger;
-            _configuration = configuration;
-            _externalServerService = externalServerService;
             _theNewsApiClient = theNewsApiClient;
-        }
-
-        private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> ParseRSSFeedAsync(string feedUrl, CancellationToken cancellationToken)
-        {
-            var articles = new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
-            try
-            {
-                using var stream = await _httpClient.GetStreamAsync(feedUrl, cancellationToken);
-                using var reader = XmlReader.Create(stream);
-                var feed = SyndicationFeed.Load(reader);
-
-                foreach (var item in feed.Items)
-                {
-                    articles.Add(new NewsAggregation.Server.Models.Entities.NewsArticle
-                    {
-                        Title = item.Title?.Text ?? "No Title",
-                        Description = item.Summary?.Text ?? "",
-                        Url = item.Links.FirstOrDefault()?.Uri.ToString() ?? "",
-                        Source = new Uri(feedUrl).Host,
-                        PublishedAt = item.PublishDate.UtcDateTime != DateTime.MinValue ? item.PublishDate.UtcDateTime : DateTime.UtcNow,
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error parsing RSS feed: {FeedUrl}", feedUrl);
-            }
-            return articles;
+            _newsApiClient = newsApiClient;
+            _bbcRssClient = bbcRssClient;
         }
 
         public async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> FetchLatestNewsAsync(CancellationToken cancellationToken = default)
         {
             var articles = new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
-
             try
             {
                 var tasks = new List<Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>>>
                 {
-                    FetchFromNewsAPIAsync(cancellationToken),
+                    FetchFromNewsApiAsync(cancellationToken),
                     FetchFromTheNewsApiAsync(cancellationToken),
-                    FetchFromRSSFeedsAsync(cancellationToken)
+                    FetchFromBbcRssAsync(cancellationToken)
                 };
-
                 var results = await Task.WhenAll(tasks);
-
                 foreach (var result in results)
                 {
                     articles.AddRange(result);
                 }
-
                 var uniqueArticles = articles
                     .GroupBy(a => a.Title.ToLowerInvariant())
                     .Select(g => g.First())
                     .OrderByDescending(a => a.PublishedAt)
                     .ToList();
-
                 _logger.LogDebug("Fetched {Count} unique articles from external sources", uniqueArticles.Count);
-
                 return uniqueArticles;
             }
             catch (Exception ex)
@@ -94,53 +57,33 @@ namespace NewsAggregation.Server.Services
             }
         }
 
-        private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> FetchFromNewsAPIAsync(CancellationToken cancellationToken)
+        private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> FetchFromNewsApiAsync(CancellationToken cancellationToken)
         {
             try
             {
-                var apiKey = _configuration["NewsAPI:ApiKey"];
-                if (string.IsNullOrEmpty(apiKey))
-                {
-                    _logger.LogWarning("NewsAPI key not configured, skipping NewsAPI fetch");
-                    await _externalServerService.UpdateServerLastAccessedAsync(1);
-                    return new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
-                }
-
-                var url = $"https://newsapi.org/v2/top-headlines?country=us&apiKey={apiKey}";
-                var response = await _httpClient.GetStringAsync(url, cancellationToken);
-
-                var newsApiResponse = JsonSerializer.Deserialize<NewsApiResponse>(response, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                var articles = newsApiResponse?.Articles?.Select(article => new NewsAggregation.Server.Models.Entities.NewsArticle
-                {
-                    Title = article.Title ?? "No Title",
-                    Description = article.Description ?? "No Description",
-                    Url = article.Url ?? "",
-                    Source = article.Source?.Name ?? "NewsAPI",
-                    PublishedAt = DateTime.TryParse(article.PublishedAt, out var date) ? date : DateTime.UtcNow,
-                    ImageUrl = article.UrlToImage
-                }).ToList() ?? new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
-
-                _logger.LogDebug("Fetched {Count} articles from NewsAPI", articles.Count);
-
-                await _externalServerService.UpdateServerLastAccessedAsync(1);
-
-                return articles;
+                return await _newsApiClient.FetchTopHeadlinesAsync(cancellationToken);
+            }
+            catch (NewsApiConfigurationException ex)
+            {
+                _logger.LogWarning(ex, "NewsAPI configuration error: {Message}", ex.Message);
+                return Enumerable.Empty<NewsAggregation.Server.Models.Entities.NewsArticle>();
+            }
+            catch (NewsApiException ex)
+            {
+                _logger.LogError(ex, "NewsAPI error: {Message}", ex.Message);
+                return Enumerable.Empty<NewsAggregation.Server.Models.Entities.NewsArticle>();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching from NewsAPI");
-                return new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
+                _logger.LogError(ex, "Unexpected error with NewsAPI: {Message}", ex.Message);
+                return Enumerable.Empty<NewsAggregation.Server.Models.Entities.NewsArticle>();
             }
         }
 
         private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> FetchFromTheNewsApiAsync(CancellationToken cancellationToken)
         {
             try
-            { 
+            {
                 return await _theNewsApiClient.FetchTopNewsAsync(cancellationToken);
             }
             catch (TheNewsApiConfigurationException ex)
@@ -160,29 +103,27 @@ namespace NewsAggregation.Server.Services
             }
         }
 
-        private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> FetchFromRSSFeedsAsync(CancellationToken cancellationToken)
+        private async Task<IEnumerable<NewsAggregation.Server.Models.Entities.NewsArticle>> FetchFromBbcRssAsync(CancellationToken cancellationToken)
         {
-            var articles = new List<NewsAggregation.Server.Models.Entities.NewsArticle>();
-            var rssFeeds = new[]
+            try
             {
-               "https://feeds.bbci.co.uk/news/rss.xml"
-           };
-
-            foreach (var feedUrl in rssFeeds)
-            {
-                try
-                {
-                    var feedArticles = await ParseRSSFeedAsync(feedUrl, cancellationToken);
-                    articles.AddRange(feedArticles);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to fetch RSS feed: {FeedUrl}", feedUrl);
-                }
+                return await _bbcRssClient.FetchRssArticlesAsync(cancellationToken);
             }
-
-            _logger.LogDebug("Fetched {Count} articles from RSS feeds", articles.Count);
-            return articles;
+            catch (BbcRssConfigurationException ex)
+            {
+                _logger.LogWarning(ex, "BBC RSS configuration error: {Message}", ex.Message);
+                return Enumerable.Empty<NewsAggregation.Server.Models.Entities.NewsArticle>();
+            }
+            catch (BbcRssException ex)
+            {
+                _logger.LogError(ex, "BBC RSS error: {Message}", ex.Message);
+                return Enumerable.Empty<NewsAggregation.Server.Models.Entities.NewsArticle>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error with BBC RSS: {Message}", ex.Message);
+                return Enumerable.Empty<NewsAggregation.Server.Models.Entities.NewsArticle>();
+            }
         }
     }
 }
