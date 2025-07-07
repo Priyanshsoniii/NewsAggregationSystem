@@ -1,0 +1,177 @@
+@startuml NewsAggregationServerERDiagram
+
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam classFontName Arial
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F0F8FF
+skinparam classBorderColor #4169E1
+skinparam arrowColor #2E4A8C
+skinparam linetype ortho
+
+title News Aggregation Server - Entity Relationship Diagram
+
+' Core Entities
+entity "Users" as users {
+  * id : INT (PK)
+  --
+  * username : VARCHAR(100) (UK)
+  * email : VARCHAR(255) (UK)
+  * password_hash : VARCHAR(255)
+  * role : VARCHAR(20)
+  * created_at : DATETIME
+  * is_active : BOOLEAN
+}
+
+entity "NewsArticles" as articles {
+  * id : INT (PK)
+  --
+  * title : VARCHAR(500)
+  description : TEXT
+  * url : VARCHAR(500) (UK)
+  * source : VARCHAR(100)
+  * category_id : INT (FK)
+  * published_at : DATETIME
+  * created_at : DATETIME
+  image_url : VARCHAR(255)
+  author : VARCHAR(100)
+  likes : INT DEFAULT 0
+  dislikes : INT DEFAULT 0
+  is_hidden : BOOLEAN DEFAULT FALSE
+  report_count : INT DEFAULT 0
+}
+
+entity "Categories" as categories {
+  * id : INT (PK)
+  --
+  * name : VARCHAR(50) (UK)
+  description : VARCHAR(255)
+  keywords : VARCHAR(255)
+  * is_active : BOOLEAN
+  is_hidden : BOOLEAN DEFAULT FALSE
+  * created_at : DATETIME
+}
+
+entity "ExternalServers" as servers {
+  * id : INT (PK)
+  --
+  * name : VARCHAR(100)
+  * api_url : VARCHAR(500)
+  * api_key : VARCHAR(255)
+  * is_active : BOOLEAN
+  last_accessed : DATETIME
+  * created_at : DATETIME
+  server_type : VARCHAR(50)
+  requests_per_hour : INT DEFAULT 1000
+  current_hour_requests : INT DEFAULT 0
+  last_hour_reset : DATETIME
+}
+
+' Junction Tables
+entity "SavedArticles" as saved {
+  * id : INT (PK)
+  --
+  * user_id : INT (FK)
+  * news_article_id : INT (FK)
+  * saved_at : DATETIME
+}
+
+entity "UserArticleLikes" as likes {
+  * id : INT (PK)
+  --
+  * user_id : INT (FK)
+  * news_article_id : INT (FK)
+  * liked_at : DATETIME
+}
+
+entity "UserArticleReads" as reads {
+  * id : INT (PK)
+  --
+  * user_id : INT (FK)
+  * news_article_id : INT (FK)
+  * read_at : DATETIME
+}
+
+entity "Reports" as reports {
+  * id : INT (PK)
+  --
+  * user_id : INT (FK)
+  * news_article_id : INT (FK)
+  reason : VARCHAR(255)
+  * created_at : DATETIME
+}
+
+entity "Notifications" as notifications {
+  * id : INT (PK)
+  --
+  * user_id : INT (FK)
+  * title : VARCHAR(200)
+  message : TEXT
+  * is_read : BOOLEAN DEFAULT FALSE
+  * created_at : DATETIME
+  notification_type : VARCHAR(50)
+  related_article_id : INT (FK)
+}
+
+entity "UserNotificationSettings" as settings {
+  * id : INT (PK)
+  --
+  * user_id : INT (FK)
+  category_id : INT (FK)
+  * is_enabled : BOOLEAN
+  keywords : TEXT
+  * email_notifications : BOOLEAN
+  * created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "FilteredKeywords" as keywords {
+  * id : INT (PK)
+  --
+  * keyword : VARCHAR(100) (UK)
+  * created_at : DATETIME
+}
+
+' Relationships
+users ||--o{ saved : "saves"
+articles ||--o{ saved : "saved by"
+
+users ||--o{ likes : "likes"
+articles ||--o{ likes : "liked by"
+
+users ||--o{ reads : "reads"
+articles ||--o{ reads : "read by"
+
+users ||--o{ reports : "reports"
+articles ||--o{ reports : "reported by"
+
+users ||--o{ notifications : "receives"
+articles ||--o{ notifications : "related to"
+
+users ||--o{ settings : "configures"
+categories ||--o{ settings : "configured for"
+
+categories ||--o{ articles : "categorizes"
+
+' Notes
+note top of users : "Core user entity with authentication\nand role-based access control\n\nConstraints:\n- Email must be unique\n- Username must be unique\n- Role defaults to 'User'"
+note top of articles : "Main content entity with\nengagement metrics and\nmoderation features\n\nConstraints:\n- URL must be unique\n- Title is required\n- Category is required"
+note top of categories : "News categorization with\nkeyword support for\ncontent filtering\n\nConstraints:\n- Name must be unique\n- Active by default"
+note top of servers : "External API configuration\nwith rate limiting and\nmonitoring capabilities\n\nFeatures:\n- Request tracking\n- Hourly rate limiting\n- Last access monitoring"
+
+note right of saved : "User's saved articles\ncollection\n\nUnique constraint:\n(user_id, news_article_id)"
+note right of likes : "User engagement tracking\nfor recommendations\n\nUnique constraint:\n(user_id, news_article_id)"
+note right of reads : "Reading history for\npersonalization\n\nUnique constraint:\n(user_id, news_article_id)"
+note right of reports : "Content moderation\nand flagging system\n\nTracks report reasons\nand timestamps"
+note right of notifications : "User notification system\nwith email support\n\nFeatures:\n- Read status tracking\n- Notification types\n- Related article linking"
+note right of settings : "Personalized notification\npreferences and keywords\n\nUnique constraint:\n(user_id, category_id)"
+note right of keywords : "Admin-controlled content\nfiltering keywords\n\nUsed for automatic\ncontent moderation"
+
+' Indexes and Constraints
+note bottom of users : "Indexes:\n- Email (Unique)\n- Username (Unique)\n- Role (for filtering)"
+note bottom of articles : "Indexes:\n- URL (Unique)\n- PublishedAt (for date filtering)\n- CategoryId (for category filtering)\n- IsHidden (for visibility)"
+note bottom of categories : "Indexes:\n- Name (Unique)\n- IsActive (for filtering)\n- IsHidden (for moderation)"
+note bottom of servers : "Indexes:\n- Name (for lookup)\n- ServerType (for grouping)\n- IsActive (for filtering)"
+
+@enduml 

@@ -1,0 +1,182 @@
+@startuml NewsAggregationServerClassDiagram
+
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+skinparam classFontName Arial
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F8F9FA
+skinparam classBorderColor #6C757D
+skinparam arrowColor #495057
+skinparam linetype ortho
+
+title News Aggregation Server - Domain Model Class Diagram
+
+' Core Entities
+class User {
+  +Id: int
+  +Username: string
+  +Email: string
+  +PasswordHash: string
+  +Role: string
+  +CreatedAt: DateTime
+  +IsActive: bool
+  --
+  +GetKey(): int
+}
+
+class NewsArticle {
+  +Id: int
+  +Title: string
+  +Description: string
+  +Url: string
+  +Source: string
+  +CategoryId: int
+  +PublishedAt: DateTime
+  +CreatedAt: DateTime
+  +ImageUrl: string
+  +Author: string
+  +Likes: int
+  +Dislikes: int
+  +IsHidden: bool
+  +ReportCount: int
+  --
+  +GetKey(): int
+}
+
+class Category {
+  +Id: int
+  +Name: string
+  +Description: string
+  +Keywords: string
+  +IsActive: bool
+  +IsHidden: bool
+  +CreatedAt: DateTime
+  --
+  +GetKey(): int
+}
+
+class ExternalServer {
+  +Id: int
+  +Name: string
+  +ApiUrl: string
+  +ApiKey: string
+  +IsActive: bool
+  +LastAccessed: DateTime
+  +CreatedAt: DateTime
+  +ServerType: string
+  +RequestsPerHour: int
+  +CurrentHourRequests: int
+  +LastHourReset: DateTime
+  --
+  +GetKey(): int
+}
+
+' Junction Tables
+class SavedArticle {
+  +Id: int
+  +UserId: int
+  +NewsArticleId: int
+  +SavedAt: DateTime
+  --
+  +GetKey(): int
+}
+
+class UserArticleLike {
+  +Id: int
+  +UserId: int
+  +NewsArticleId: int
+  +LikedAt: DateTime
+  --
+  +GetKey(): int
+}
+
+class UserArticleRead {
+  +Id: int
+  +UserId: int
+  +NewsArticleId: int
+  +ReadAt: DateTime
+  --
+  +GetKey(): int
+}
+
+class Report {
+  +Id: int
+  +UserId: int
+  +NewsArticleId: int
+  +Reason: string
+  +CreatedAt: DateTime
+  --
+  +GetKey(): int
+}
+
+class Notification {
+  +Id: int
+  +UserId: int
+  +Title: string
+  +Message: string
+  +IsRead: bool
+  +CreatedAt: DateTime
+  +NotificationType: string
+  +RelatedArticleId: int
+  --
+  +GetKey(): int
+}
+
+class UserNotificationSetting {
+  +Id: int
+  +UserId: int
+  +CategoryId: int
+  +IsEnabled: bool
+  +Keywords: string
+  +EmailNotifications: bool
+  +CreatedAt: DateTime
+  +UpdatedAt: DateTime
+  --
+  +GetKey(): int
+}
+
+class FilteredKeyword {
+  +Id: int
+  +Keyword: string
+  +CreatedAt: DateTime
+  --
+  +GetKey(): int
+}
+
+' Relationships
+User ||--o{ SavedArticle : "saves"
+NewsArticle ||--o{ SavedArticle : "saved by"
+
+User ||--o{ UserArticleLike : "likes"
+NewsArticle ||--o{ UserArticleLike : "liked by"
+
+User ||--o{ UserArticleRead : "reads"
+NewsArticle ||--o{ UserArticleRead : "read by"
+
+User ||--o{ Report : "reports"
+NewsArticle ||--o{ Report : "reported by"
+
+User ||--o{ Notification : "receives"
+NewsArticle ||--o{ Notification : "related to"
+
+User ||--o{ UserNotificationSetting : "configures"
+Category ||--o{ UserNotificationSetting : "configured for"
+
+Category ||--o{ NewsArticle : "categorizes"
+
+' Notes
+note top of User : "Core user entity with authentication\nand role-based access control"
+note top of NewsArticle : "Main content entity with\nengagement metrics and\nmoderation features"
+note top of Category : "News categorization with\nkeyword support for\ncontent filtering"
+note top of ExternalServer : "External API configuration\nwith rate limiting and\nmonitoring capabilities"
+
+note right of SavedArticle : "User's saved articles\ncollection"
+note right of UserArticleLike : "User engagement tracking\nfor recommendations"
+note right of UserArticleRead : "Reading history for\npersonalization"
+note right of Report : "Content moderation\nand flagging system"
+note right of Notification : "User notification system\nwith email support"
+note right of UserNotificationSetting : "Personalized notification\npreferences and keywords"
+note right of FilteredKeyword : "Admin-controlled content\nfiltering keywords"
+
+@enduml 

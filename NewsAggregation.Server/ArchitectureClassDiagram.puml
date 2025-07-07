@@ -1,0 +1,277 @@
+@startuml NewsAggregationServerArchitectureDiagram
+
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam classFontName Arial
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F8F9FA
+skinparam classBorderColor #6C757D
+skinparam arrowColor #495057
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+title News Aggregation Server - Architecture Class Diagram
+
+package "Presentation Layer" {
+  class AuthController {
+    +Login(loginDto): IActionResult
+    +Register(registerDto): IActionResult
+  }
+  
+  class NewsController {
+    +GetHeadlines(): IActionResult
+    +GetTodayHeadlines(): IActionResult
+    +SearchNews(query): IActionResult
+    +SaveArticle(dto): IActionResult
+    +LikeArticle(id): IActionResult
+    +GetRecommendations(): IActionResult
+  }
+  
+  class AdminController {
+    +GetAllServers(): IActionResult
+    +UpdateServer(id, dto): IActionResult
+    +CreateCategory(dto): IActionResult
+    +GetReportedArticles(): IActionResult
+    +HideArticle(id): IActionResult
+  }
+  
+  class UserController {
+    +GetProfile(): IActionResult
+    +UpdateProfile(dto): IActionResult
+  }
+  
+  class NotificationController {
+    +GetNotifications(): IActionResult
+    +ConfigureNotifications(dto): IActionResult
+    +SendTestEmail(dto): IActionResult
+  }
+}
+
+package "Application Layer" {
+  interface IAuthService {
+    +LoginAsync(email, password): Task<(bool, string, User)>
+    +RegisterAsync(username, email, password): Task<RegistrationResult>
+  }
+  
+  class AuthService {
+    -_userRepository: IUserRepository
+    -_jwtSettings: JwtSettings
+    +LoginAsync(email, password): Task<(bool, string, User)>
+    +RegisterAsync(username, email, password): Task<RegistrationResult>
+    -GenerateJwtToken(user): string
+    -HashPassword(password): string
+  }
+  
+  interface INewsService {
+    +GetHeadlinesAsync(): Task<IEnumerable<NewsArticle>>
+    +GetTodayHeadlinesAsync(): Task<IEnumerable<NewsArticle>>
+    +SearchNewsAsync(query, startDate, endDate): Task<IEnumerable<NewsArticle>>
+    +SaveArticleAsync(userId, articleId): Task<bool>
+    +GetRecommendationsAsync(userId, count): Task<IEnumerable<NewsArticle>>
+  }
+  
+  class NewsService {
+    -_newsRepository: INewsRepository
+    -_userRepository: IUserRepository
+    +GetHeadlinesAsync(): Task<IEnumerable<NewsArticle>>
+    +GetTodayHeadlinesAsync(): Task<IEnumerable<NewsArticle>>
+    +SearchNewsAsync(query, startDate, endDate): Task<IEnumerable<NewsArticle>>
+    +SaveArticleAsync(userId, articleId): Task<bool>
+    +GetRecommendationsAsync(userId, count): Task<IEnumerable<NewsArticle>>
+    -CalculateUserPreferences(userId): Task<UserPreferences>
+  }
+  
+  interface IExternalNewsService {
+    +FetchLatestNewsAsync(cancellationToken): Task<IEnumerable<NewsArticle>>
+  }
+  
+  class ExternalNewsService {
+    -_theNewsApiClient: ITheNewsApiClient
+    -_newsApiClient: INewsApiClient
+    -_bbcRssClient: IBbcRssClient
+    +FetchLatestNewsAsync(cancellationToken): Task<IEnumerable<NewsArticle>>
+    -FetchFromNewsApiAsync(cancellationToken): Task<IEnumerable<NewsArticle>>
+    -FetchFromTheNewsApiAsync(cancellationToken): Task<IEnumerable<NewsArticle>>
+    -FetchFromBbcRssAsync(cancellationToken): Task<IEnumerable<NewsArticle>>
+  }
+  
+  interface IEmailService {
+    +SendEmailAsync(to, subject, body): Task<bool>
+    +SendNotificationEmailAsync(user, notification): Task<bool>
+  }
+  
+  class EmailService {
+    -_emailSettings: EmailSettings
+    -_smtpClient: ISmtpClient
+    +SendEmailAsync(to, subject, body): Task<bool>
+    +SendNotificationEmailAsync(user, notification): Task<bool>
+  }
+  
+  interface INotificationService {
+    +GetUserNotificationsAsync(userId): Task<IEnumerable<Notification>>
+    +ConfigureNotificationsAsync(userId, settings): Task<bool>
+    +SendNotificationAsync(userId, title, message): Task<bool>
+  }
+  
+  class NotificationService {
+    -_notificationRepository: INotificationRepository
+    -_emailService: IEmailService
+    +GetUserNotificationsAsync(userId): Task<IEnumerable<Notification>>
+    +ConfigureNotificationsAsync(userId, settings): Task<bool>
+    +SendNotificationAsync(userId, title, message): Task<bool>
+  }
+}
+
+package "Infrastructure Layer" {
+  interface IUserRepository {
+    +GetByIdAsync(id): Task<User>
+    +GetByEmailAsync(email): Task<User>
+    +CreateAsync(user): Task<User>
+    +UpdateAsync(user): Task<User>
+    +GetAllAsync(): Task<IEnumerable<User>>
+  }
+  
+  class UserRepository {
+    -_context: NewsAggregationContext
+    +GetByIdAsync(id): Task<User>
+    +GetByEmailAsync(email): Task<User>
+    +CreateAsync(user): Task<User>
+    +UpdateAsync(user): Task<User>
+    +GetAllAsync(): Task<IEnumerable<User>>
+  }
+  
+  interface INewsRepository {
+    +GetAllAsync(): Task<IEnumerable<NewsArticle>>
+    +GetByIdAsync(id): Task<NewsArticle>
+    +GetByCategoryAsync(categoryId): Task<IEnumerable<NewsArticle>>
+    +GetByDateRangeAsync(startDate, endDate): Task<IEnumerable<NewsArticle>>
+    +SearchAsync(query): Task<IEnumerable<NewsArticle>>
+    +CreateAsync(article): Task<NewsArticle>
+    +UpdateAsync(article): Task<NewsArticle>
+  }
+  
+  class NewsRepository {
+    -_context: NewsAggregationContext
+    +GetAllAsync(): Task<IEnumerable<NewsArticle>>
+    +GetByIdAsync(id): Task<NewsArticle>
+    +GetByCategoryAsync(categoryId): Task<IEnumerable<NewsArticle>>
+    +GetByDateRangeAsync(startDate, endDate): Task<IEnumerable<NewsArticle>>
+    +SearchAsync(query): Task<IEnumerable<NewsArticle>>
+    +CreateAsync(article): Task<NewsArticle>
+    +UpdateAsync(article): Task<NewsArticle>
+  }
+  
+  interface INotificationRepository {
+    +GetByUserIdAsync(userId): Task<IEnumerable<Notification>>
+    +CreateAsync(notification): Task<Notification>
+    +UpdateAsync(notification): Task<Notification>
+  }
+  
+  class NotificationRepository {
+    -_context: NewsAggregationContext
+    +GetByUserIdAsync(userId): Task<IEnumerable<Notification>>
+    +CreateAsync(notification): Task<Notification>
+    +UpdateAsync(notification): Task<Notification>
+  }
+}
+
+package "External Services" {
+  interface INewsApiClient {
+    +FetchTopHeadlinesAsync(cancellationToken): Task<IEnumerable<NewsArticle>>
+  }
+  
+  class NewsApiClient {
+    -_httpClient: HttpClient
+    -_apiKey: string
+    +FetchTopHeadlinesAsync(cancellationToken): Task<IEnumerable<NewsArticle>>
+  }
+  
+  interface ITheNewsApiClient {
+    +FetchTopNewsAsync(cancellationToken): Task<IEnumerable<NewsArticle>>
+  }
+  
+  class TheNewsApiClient {
+    -_httpClient: HttpClient
+    -_apiKey: string
+    +FetchTopNewsAsync(cancellationToken): Task<IEnumerable<NewsArticle>>
+  }
+  
+  interface IBbcRssClient {
+    +FetchRssArticlesAsync(cancellationToken): Task<IEnumerable<NewsArticle>>
+  }
+  
+  class BbcRssClient {
+    -_httpClient: HttpClient
+    +FetchRssArticlesAsync(cancellationToken): Task<IEnumerable<NewsArticle>>
+  }
+}
+
+package "Background Services" {
+  class NewsAggregationService {
+    -_serviceProvider: IServiceProvider
+    -_logger: ILogger
+    -_period: TimeSpan
+    +ExecuteAsync(cancellationToken): Task
+    -AggregateNewsAsync(cancellationToken): Task
+  }
+}
+
+package "Data Layer" {
+  class NewsAggregationContext {
+    +Users: DbSet<User>
+    +NewsArticles: DbSet<NewsArticle>
+    +Categories: DbSet<Category>
+    +Notifications: DbSet<Notification>
+    +SavedArticles: DbSet<SavedArticle>
+    +Reports: DbSet<Report>
+    +OnModelCreating(modelBuilder): void
+  }
+}
+
+' Relationships
+AuthController --> IAuthService
+NewsController --> INewsService
+AdminController --> IExternalServerService
+UserController --> IUserService
+NotificationController --> INotificationService
+
+IAuthService <|.. AuthService
+INewsService <|.. NewsService
+IExternalNewsService <|.. ExternalNewsService
+IEmailService <|.. EmailService
+INotificationService <|.. NotificationService
+
+AuthService --> IUserRepository
+NewsService --> INewsRepository
+NotificationService --> INotificationRepository
+NotificationService --> IEmailService
+
+IUserRepository <|.. UserRepository
+INewsRepository <|.. NewsRepository
+INotificationRepository <|.. NotificationRepository
+
+UserRepository --> NewsAggregationContext
+NewsRepository --> NewsAggregationContext
+NotificationRepository --> NewsAggregationContext
+
+ExternalNewsService --> INewsApiClient
+ExternalNewsService --> ITheNewsApiClient
+ExternalNewsService --> IBbcRssClient
+
+INewsApiClient <|.. NewsApiClient
+ITheNewsApiClient <|.. TheNewsApiClient
+IBbcRssClient <|.. BbcRssClient
+
+NewsAggregationService --> IExternalNewsService
+NewsAggregationService --> INewsService
+
+' Notes
+note top of "Presentation Layer" : "REST API Controllers\nHandle HTTP requests/responses\nApply authorization"
+note top of "Application Layer" : "Business Logic Services\nImplement use cases\nCoordinate between layers"
+note top of "Infrastructure Layer" : "Data Access Layer\nRepository pattern\nDatabase operations"
+note top of "External Services" : "External API Clients\nNews source integrations\nHTTP communication"
+note top of "Background Services" : "Scheduled Tasks\nNews aggregation\nBackground processing"
+note top of "Data Layer" : "Entity Framework Context\nDatabase schema\nData relationships"
+
+@enduml 

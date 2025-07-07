@@ -1,0 +1,174 @@
+@startuml NewsAggregationServerUseCaseDiagram
+
+!theme plain
+skinparam usecase {
+  BackgroundColor #E6F3FF
+  BorderColor #0066CC
+  ArrowColor #0066CC
+}
+skinparam actor {
+  BackgroundColor #F0F0F0
+  BorderColor #666666
+}
+skinparam package {
+  BackgroundColor #F8F8F8
+  BorderColor #CCCCCC
+}
+skinparam backgroundColor #FFFFFF
+
+title News Aggregation Server - Use Case Diagram
+
+' Actors
+actor "User" as user
+actor "Admin" as admin
+actor "External News APIs" as external
+actor "Email System" as email
+
+' System Boundary
+rectangle "News Aggregation System" {
+  
+  package "Authentication & User Management" {
+    usecase "Login" as UC1
+    usecase "Register" as UC2
+    usecase "Update Profile" as UC3
+    usecase "Validate Email" as UC4
+    usecase "Manage User Accounts" as UC5
+  }
+  
+  package "News Browsing & Search" {
+    usecase "View Headlines" as UC6
+    usecase "View Today's News" as UC7
+    usecase "View News by Category" as UC8
+    usecase "View News by Date Range" as UC9
+    usecase "Search News" as UC10
+    usecase "View Article Details" as UC11
+  }
+  
+  package "User Interactions" {
+    usecase "Save Article" as UC12
+    usecase "View Saved Articles" as UC13
+    usecase "Delete Saved Article" as UC14
+    usecase "Like Article" as UC15
+    usecase "Unlike Article" as UC16
+    usecase "Mark Article as Read" as UC17
+    usecase "Report Article" as UC18
+  }
+  
+  package "Personalization" {
+    usecase "Get Personalized Recommendations" as UC19
+    usecase "Configure Notification Settings" as UC20
+    usecase "Set Keywords for Notifications" as UC21
+    usecase "View Notifications" as UC22
+    usecase "Mark Notification as Read" as UC23
+  }
+  
+  package "Admin Management" {
+    usecase "View External Servers" as UC24
+    usecase "Update Server Configuration" as UC25
+    usecase "Create News Category" as UC26
+    usecase "View Reported Articles" as UC27
+    usecase "Hide/Show Articles" as UC28
+    usecase "Hide/Show Categories" as UC29
+    usecase "Manage Filtered Keywords" as UC30
+    usecase "View System Statistics" as UC31
+  }
+  
+  package "Background Services" {
+    usecase "Aggregate News from External Sources" as UC32
+    usecase "Send Email Notifications" as UC33
+    usecase "Process User Reports" as UC34
+    usecase "Generate Recommendations" as UC35
+  }
+  
+  package "Content Moderation" {
+    usecase "Auto-hide Articles by Report Count" as UC36
+    usecase "Filter Content by Keywords" as UC37
+    usecase "Monitor System Health" as UC38
+  }
+}
+
+' User Relationships
+user --> UC1
+user --> UC2
+user --> UC3
+user --> UC6
+user --> UC7
+user --> UC8
+user --> UC9
+user --> UC10
+user --> UC11
+user --> UC12
+user --> UC13
+user --> UC14
+user --> UC15
+user --> UC16
+user --> UC17
+user --> UC18
+user --> UC19
+user --> UC20
+user --> UC21
+user --> UC22
+user --> UC23
+
+' Admin Relationships
+admin --> UC1
+admin --> UC5
+admin --> UC24
+admin --> UC25
+admin --> UC26
+admin --> UC27
+admin --> UC28
+admin --> UC29
+admin --> UC30
+admin --> UC31
+admin --> UC36
+admin --> UC37
+admin --> UC38
+
+' External System Relationships
+external --> UC32
+email --> UC33
+
+' Include Relationships
+UC32 ..> UC6 : <<include>>
+UC32 ..> UC7 : <<include>>
+UC32 ..> UC8 : <<include>>
+UC32 ..> UC9 : <<include>>
+
+UC33 ..> UC20 : <<include>>
+UC33 ..> UC21 : <<include>>
+
+UC34 ..> UC27 : <<include>>
+UC34 ..> UC36 : <<include>>
+
+UC35 ..> UC19 : <<include>>
+
+UC37 ..> UC6 : <<include>>
+UC37 ..> UC7 : <<include>>
+UC37 ..> UC8 : <<include>>
+UC37 ..> UC9 : <<include>>
+
+' Extend Relationships
+UC15 ..> UC35 : <<extend>>
+UC16 ..> UC35 : <<extend>>
+UC17 ..> UC35 : <<extend>>
+UC12 ..> UC35 : <<extend>>
+
+UC18 ..> UC34 : <<extend>>
+
+UC20 ..> UC33 : <<extend>>
+UC21 ..> UC33 : <<extend>>
+
+' Notes
+note right of UC1 : "JWT-based authentication\nwith role-based access"
+note right of UC2 : "Email validation required\nUsername uniqueness check"
+note right of UC6 : "Default news view\nwith pagination"
+note right of UC10 : "Full-text search with\ndate range filtering"
+note right of UC19 : "AI-driven recommendations\nbased on user behavior"
+note right of UC24 : "Monitor API status\nand rate limits"
+note right of UC32 : "Runs every 4 hours\nMulti-source aggregation"
+note right of UC36 : "Automatic moderation\nbased on report threshold"
+
+note bottom of "News Aggregation System" : "System Features:\n• Multi-source news aggregation\n• Personalized content delivery\n• Content moderation system\n• Email notification system\n• Background processing\n• RESTful API architecture"
+
+@enduml 
