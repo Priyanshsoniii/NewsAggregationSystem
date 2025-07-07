@@ -9,6 +9,12 @@ namespace NewsAggregation.Server.Exceptions
         public NewsApiException(string message) : base(message) { }
         public NewsApiException(string message, Exception innerException) : base(message, innerException) { }
         protected NewsApiException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+
+        [Obsolete]
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+        }
     }
 
     [Serializable]

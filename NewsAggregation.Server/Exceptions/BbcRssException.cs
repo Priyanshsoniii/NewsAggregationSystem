@@ -9,6 +9,12 @@ namespace NewsAggregation.Server.Exceptions
         public BbcRssException(string message) : base(message) { }
         public BbcRssException(string message, Exception innerException) : base(message, innerException) { }
         protected BbcRssException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+
+        [Obsolete]
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+        }
     }
 
     [Serializable]

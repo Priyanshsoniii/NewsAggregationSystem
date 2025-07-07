@@ -218,9 +218,9 @@ namespace NewsAggregation.Tests.Unit.Services
             _mockUserArticleLikeRepository.Setup(x => x.GetByUserAndArticleAsync(userId, articleId))
                 .ReturnsAsync((UserArticleLike?)null);
             _mockUserArticleLikeRepository.Setup(x => x.CreateAsync(It.IsAny<UserArticleLike>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(new UserArticleLike());
             _mockNewsRepository.Setup(x => x.UpdateAsync(It.IsAny<NewsArticle>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(new NewsArticle());
 
             // Act
             var result = await _newsService.LikeArticleAsync(userId, articleId);
@@ -262,7 +262,7 @@ namespace NewsAggregation.Tests.Unit.Services
             _mockUserArticleLikeRepository.Setup(x => x.DeleteAsync(userId, articleId))
                 .ReturnsAsync(true);
             _mockNewsRepository.Setup(x => x.UpdateAsync(It.IsAny<NewsArticle>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(new NewsArticle());
 
             // Act
             var result = await _newsService.UnlikeArticleAsync(userId, articleId);
@@ -285,7 +285,7 @@ namespace NewsAggregation.Tests.Unit.Services
             _mockUserArticleReadRepository.Setup(x => x.GetByUserAndArticleAsync(userId, articleId))
                 .ReturnsAsync((UserArticleRead?)null);
             _mockUserArticleReadRepository.Setup(x => x.CreateAsync(It.IsAny<UserArticleRead>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(new UserArticleRead());
 
             // Act
             var result = await _newsService.MarkArticleAsReadAsync(userId, articleId);
@@ -407,8 +407,8 @@ namespace NewsAggregation.Tests.Unit.Services
 
             _mockNewsRepository.Setup(x => x.GetByIdAsync(articleId)).ReturnsAsync(article);
             _mockReportRepository.Setup(x => x.CreateAsync(It.IsAny<Report>()))
-                .Returns(Task.CompletedTask);
-            _mockReportRepository.Setup(x => x.GetReportsByArticleAsync(articleId))
+                .ReturnsAsync(new Report());
+            _mockReportRepository.Setup(x => x.GetByArticleIdAsync(articleId))
                 .ReturnsAsync(new List<Report> { new Report() });
 
             // Act
@@ -430,17 +430,17 @@ namespace NewsAggregation.Tests.Unit.Services
 
             var existingReports = new List<Report>
             {
-                new Report { Id = 1, ArticleId = articleId },
-                new Report { Id = 2, ArticleId = articleId }
+                new Report { Id = 1, NewsArticleId = articleId },
+                new Report { Id = 2, NewsArticleId = articleId }
             };
 
             _mockNewsRepository.Setup(x => x.GetByIdAsync(articleId)).ReturnsAsync(article);
             _mockReportRepository.Setup(x => x.CreateAsync(It.IsAny<Report>()))
-                .Returns(Task.CompletedTask);
-            _mockReportRepository.Setup(x => x.GetReportsByArticleAsync(articleId))
+                .ReturnsAsync(new Report());
+            _mockReportRepository.Setup(x => x.GetByArticleIdAsync(articleId))
                 .ReturnsAsync(existingReports);
             _mockNewsRepository.Setup(x => x.UpdateAsync(It.IsAny<NewsArticle>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(new NewsArticle());
 
             // Act
             var result = await _newsService.ReportArticleAsync(userId, articleId, reason, 3);

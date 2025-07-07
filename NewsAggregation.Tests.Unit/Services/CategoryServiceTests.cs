@@ -1,211 +1,148 @@
-using Moq;
+using Microsoft.EntityFrameworkCore;
+using NewsAggregation.Server.Data;
 using NewsAggregation.Server.Models.Entities;
-using NewsAggregation.Server.Repository.Interfaces;
 using NewsAggregation.Server.Services;
 using Xunit;
+using System.Linq;
+using Microsoft.EntityFrameworkCore.InMemory;
 
 namespace NewsAggregation.Tests.Unit.Services
 {
     public class CategoryServiceTests
     {
-        private readonly Mock<ICategoryRepository> _mockCategoryRepository;
+        private readonly NewsAggregationContext _context;
         private readonly CategoryService _categoryService;
 
         public CategoryServiceTests()
         {
-            _mockCategoryRepository = new Mock<ICategoryRepository>();
-            _categoryService = new CategoryService(_mockCategoryRepository.Object);
+            var options = new DbContextOptionsBuilder<NewsAggregationContext>()
+                .UseInMemoryDatabase(databaseName: "CategoryServiceTestsDb")
+                .Options;
+            _context = new NewsAggregationContext(options);
+            _context.Database.EnsureDeleted();
+            _context.Database.EnsureCreated();
+            _categoryService = new CategoryService(_context);
         }
 
         [Fact]
-        public async Task GetAllAsync_ReturnsAllCategories()
+        public async Task GetAllCategoriesAsync_ReturnsAllActiveCategories()
         {
             // Arrange
-            var categories = new List<Category>
-            {
-                new Category { Id = 1, Name = "Technology", IsHidden = false },
-                new Category { Id = 2, Name = "Sports", IsHidden = false },
-                new Category { Id = 3, Name = "Politics", IsHidden = true }
-            };
-
-            _mockCategoryRepository.Setup(x => x.GetAllAsync()).ReturnsAsync(categories);
+            _context.Categories.AddRange(
+                new Category { Name = "Tech", IsActive = true },
+                new Category { Name = "Sports", IsActive = true },
+                new Category { Name = "Politics", IsActive = false }
+            );
+            await _context.SaveChangesAsync();
 
             // Act
-            var result = await _categoryService.GetAllAsync();
+            var result = await _categoryService.GetAllCategoriesAsync();
 
             // Assert
             var resultList = result.ToList();
-            Assert.Equal(3, resultList.Count);
-            Assert.Contains(resultList, c => c.Name == "Technology");
-            Assert.Contains(resultList, c => c.Name == "Sports");
-            Assert.Contains(resultList, c => c.Name == "Politics");
+            Assert.Equal(2, resultList.Count);
+            Assert.All(resultList, c => Assert.True(c.IsActive));
         }
 
         [Fact]
-        public async Task GetByIdAsync_WithValidId_ReturnsCategory()
+        public async Task GetCategoryByIdAsync_WithValidId_ReturnsCategory()
         {
             // Arrange
-            var categoryId = 1;
-            var category = new Category { Id = categoryId, Name = "Technology", IsHidden = false };
-
-            _mockCategoryRepository.Setup(x => x.GetByIdAsync(categoryId)).ReturnsAsync(category);
+            var category = new Category { Name = "Tech", IsActive = true };
+            _context.Categories.Add(category);
+            await _context.SaveChangesAsync();
 
             // Act
-            var result = await _categoryService.GetByIdAsync(categoryId);
+            var result = await _categoryService.GetCategoryByIdAsync(category.Id);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(categoryId, result.Id);
-            Assert.Equal("Technology", result.Name);
+            Assert.Equal(category.Name, result.Name);
         }
 
         [Fact]
-        public async Task GetByIdAsync_WithInvalidId_ReturnsNull()
+        public async Task GetCategoryByIdAsync_WithInvalidId_ReturnsNull()
         {
-            // Arrange
-            var categoryId = 999;
-
-            _mockCategoryRepository.Setup(x => x.GetByIdAsync(categoryId)).ReturnsAsync((Category?)null);
-
             // Act
-            var result = await _categoryService.GetByIdAsync(categoryId);
-
+            var result = await _categoryService.GetCategoryByIdAsync(999);
             // Assert
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task CreateAsync_WithValidData_ReturnsCreatedCategory()
+        public async Task CreateCategoryAsync_WithValidData_ReturnsCreatedCategory()
         {
             // Arrange
-            var category = new Category { Name = "New Category", IsHidden = false };
-            var createdCategory = new Category { Id = 1, Name = "New Category", IsHidden = false };
-
-            _mockCategoryRepository.Setup(x => x.CreateAsync(category)).ReturnsAsync(createdCategory);
+            var category = new Category { Name = "New Category", IsActive = true };
 
             // Act
-            var result = await _categoryService.CreateAsync(category);
+            var result = await _categoryService.CreateCategoryAsync(category);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(1, result.Id);
             Assert.Equal("New Category", result.Name);
-            _mockCategoryRepository.Verify(x => x.CreateAsync(category), Times.Once);
+            Assert.True(result.IsActive);
         }
 
         [Fact]
-        public async Task UpdateAsync_WithValidData_ReturnsUpdatedCategory()
+        public async Task UpdateCategoryAsync_WithValidData_ReturnsUpdatedCategory()
         {
             // Arrange
-            var category = new Category { Id = 1, Name = "Updated Category", IsHidden = false };
-            var updatedCategory = new Category { Id = 1, Name = "Updated Category", IsHidden = false };
-
-            _mockCategoryRepository.Setup(x => x.UpdateAsync(category)).ReturnsAsync(updatedCategory);
+            var category = new Category { Name = "Old Name", IsActive = true };
+            _context.Categories.Add(category);
+            await _context.SaveChangesAsync();
+            category.Name = "Updated Name";
 
             // Act
-            var result = await _categoryService.UpdateAsync(category);
+            var result = await _categoryService.UpdateCategoryAsync(category);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(1, result.Id);
-            Assert.Equal("Updated Category", result.Name);
-            _mockCategoryRepository.Verify(x => x.UpdateAsync(category), Times.Once);
+            Assert.Equal("Updated Name", result.Name);
         }
 
         [Fact]
-        public async Task DeleteAsync_WithValidId_ReturnsTrue()
+        public async Task DeleteCategoryAsync_WithValidId_ReturnsTrue()
         {
             // Arrange
-            var categoryId = 1;
-
-            _mockCategoryRepository.Setup(x => x.DeleteAsync(categoryId)).ReturnsAsync(true);
+            var category = new Category { Name = "ToDelete", IsActive = true };
+            _context.Categories.Add(category);
+            await _context.SaveChangesAsync();
 
             // Act
-            var result = await _categoryService.DeleteAsync(categoryId);
+            var result = await _categoryService.DeleteCategoryAsync(category.Id);
 
             // Assert
             Assert.True(result);
-            _mockCategoryRepository.Verify(x => x.DeleteAsync(categoryId), Times.Once);
+            var deleted = await _categoryService.GetCategoryByIdAsync(category.Id);
+            Assert.NotNull(deleted);
+            Assert.False(deleted.IsActive);
         }
 
         [Fact]
-        public async Task DeleteAsync_WithInvalidId_ReturnsFalse()
+        public async Task DeleteCategoryAsync_WithInvalidId_ReturnsFalse()
         {
-            // Arrange
-            var categoryId = 999;
-
-            _mockCategoryRepository.Setup(x => x.DeleteAsync(categoryId)).ReturnsAsync(false);
-
             // Act
-            var result = await _categoryService.DeleteAsync(categoryId);
-
+            var result = await _categoryService.DeleteCategoryAsync(999);
             // Assert
             Assert.False(result);
-            _mockCategoryRepository.Verify(x => x.DeleteAsync(categoryId), Times.Once);
         }
 
         [Fact]
-        public async Task GetActiveCategoriesAsync_ReturnsOnlyActiveCategories()
+        public async Task UpdateCategoryKeywordsAsync_WithValidId_UpdatesKeywords()
         {
             // Arrange
-            var allCategories = new List<Category>
-            {
-                new Category { Id = 1, Name = "Technology", IsHidden = false },
-                new Category { Id = 2, Name = "Sports", IsHidden = false },
-                new Category { Id = 3, Name = "Politics", IsHidden = true },
-                new Category { Id = 4, Name = "Entertainment", IsHidden = false }
-            };
-
-            _mockCategoryRepository.Setup(x => x.GetAllAsync()).ReturnsAsync(allCategories);
+            var category = new Category { Name = "KeywordCat", IsActive = true };
+            _context.Categories.Add(category);
+            await _context.SaveChangesAsync();
+            var keywords = "news,tech,ai";
 
             // Act
-            var result = await _categoryService.GetActiveCategoriesAsync();
+            var result = await _categoryService.UpdateCategoryKeywordsAsync(category.Id, keywords);
 
             // Assert
-            var resultList = result.ToList();
-            Assert.Equal(3, resultList.Count);
-            Assert.All(resultList, c => Assert.False(c.IsHidden));
-            Assert.Contains(resultList, c => c.Name == "Technology");
-            Assert.Contains(resultList, c => c.Name == "Sports");
-            Assert.Contains(resultList, c => c.Name == "Entertainment");
-            Assert.DoesNotContain(resultList, c => c.Name == "Politics");
-        }
-
-        [Fact]
-        public async Task CreateAsync_WhenRepositoryThrowsException_PropagatesException()
-        {
-            // Arrange
-            var category = new Category { Name = "Test Category" };
-
-            _mockCategoryRepository.Setup(x => x.CreateAsync(category))
-                .ThrowsAsync(new Exception("Database error"));
-
-            // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _categoryService.CreateAsync(category));
-        }
-
-        [Fact]
-        public async Task UpdateAsync_WhenRepositoryThrowsException_PropagatesException()
-        {
-            // Arrange
-            var category = new Category { Id = 1, Name = "Test Category" };
-
-            _mockCategoryRepository.Setup(x => x.UpdateAsync(category))
-                .ThrowsAsync(new Exception("Database error"));
-
-            // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _categoryService.UpdateAsync(category));
-        }
-
-        [Fact]
-        public async Task GetAllAsync_WhenRepositoryThrowsException_PropagatesException()
-        {
-            // Arrange
-            _mockCategoryRepository.Setup(x => x.GetAllAsync())
-                .ThrowsAsync(new Exception("Database error"));
-
-            // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _categoryService.GetAllAsync());
+            Assert.NotNull(result);
+            Assert.Equal(keywords, result.Keywords);
         }
     }
 } 
