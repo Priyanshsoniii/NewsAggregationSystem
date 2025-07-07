@@ -2,38 +2,36 @@ using Moq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using NewsAggregation.Server.Services.ExternalClients;
-using NewsAggregation.Server.Models.Entities;
 using NewsAggregation.Server.Exceptions;
 using Xunit;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace NewsAggregation.Tests.Unit.Services.ExternalClients
 {
     public class NewsApiClientTests
     {
-        private readonly Mock<HttpClient> _mockHttpClient;
         private readonly Mock<ILogger<NewsApiClient>> _mockLogger;
         private readonly Mock<IConfiguration> _mockConfiguration;
         private readonly NewsApiClient _newsApiClient;
+        private readonly TestHttpMessageHandler _testHttpHandler;
 
         public NewsApiClientTests()
         {
-            _mockHttpClient = new Mock<HttpClient>();
+            _testHttpHandler = new TestHttpMessageHandler();
+            var httpClient = new HttpClient(_testHttpHandler);
             _mockLogger = new Mock<ILogger<NewsApiClient>>();
             _mockConfiguration = new Mock<IConfiguration>();
-            _newsApiClient = new NewsApiClient(_mockHttpClient.Object, _mockLogger.Object, _mockConfiguration.Object);
+            _newsApiClient = new NewsApiClient(httpClient, _mockLogger.Object, _mockConfiguration.Object);
         }
 
         [Fact]
         public void IsConfigurationValid_WithValidApiKey_ReturnsTrue()
         {
-            // Arrange
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns("valid-api-key");
-
-            // Act
-            var result = _newsApiClient.IsConfigurationValid();
-
-            // Assert
-            Assert.True(result);
+            Assert.True(_newsApiClient.IsConfigurationValid());
         }
 
         [Theory]
@@ -42,20 +40,13 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
         [InlineData("   ")]
         public void IsConfigurationValid_WithInvalidApiKey_ReturnsFalse(string apiKey)
         {
-            // Arrange
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-
-            // Act
-            var result = _newsApiClient.IsConfigurationValid();
-
-            // Assert
-            Assert.False(result);
+            Assert.False(_newsApiClient.IsConfigurationValid());
         }
 
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithValidConfigurationAndResponse_ReturnsArticles()
         {
-            // Arrange
             var apiKey = "test-api-key";
             var jsonResponse = @"{
                 ""articles"": [
@@ -69,15 +60,10 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
                     }
                 ]
             }";
-
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-            _mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(jsonResponse);
+            _testHttpHandler.SetResponse(jsonResponse);
 
-            // Act
             var result = await _newsApiClient.FetchTopHeadlinesAsync();
-
-            // Assert
             var resultList = result.ToList();
             Assert.Single(resultList);
             var article = resultList[0];
@@ -91,23 +77,16 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithInvalidConfiguration_ThrowsConfigurationException()
         {
-            // Arrange
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns((string?)null);
-
-            // Act & Assert
             await Assert.ThrowsAsync<NewsApiConfigurationException>(() => _newsApiClient.FetchTopHeadlinesAsync());
         }
 
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithHttpRequestException_ThrowsNewsApiException()
         {
-            // Arrange
             var apiKey = "test-api-key";
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-            _mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new HttpRequestException("Network error"));
-
-            // Act & Assert
+            _testHttpHandler.SetException(new HttpRequestException("Network error"));
             var exception = await Assert.ThrowsAsync<NewsApiException>(() => _newsApiClient.FetchTopHeadlinesAsync());
             Assert.Contains("HTTP request failed", exception.Message);
         }
@@ -115,14 +94,10 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithJsonException_ThrowsNewsApiException()
         {
-            // Arrange
             var apiKey = "test-api-key";
             var invalidJson = "invalid json";
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-            _mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(invalidJson);
-
-            // Act & Assert
+            _testHttpHandler.SetResponse(invalidJson);
             var exception = await Assert.ThrowsAsync<NewsApiException>(() => _newsApiClient.FetchTopHeadlinesAsync());
             Assert.Contains("Failed to parse JSON", exception.Message);
         }
@@ -130,13 +105,9 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithTaskCanceledException_ThrowsNewsApiException()
         {
-            // Arrange
             var apiKey = "test-api-key";
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-            _mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new TaskCanceledException("Request cancelled"));
-
-            // Act & Assert
+            _testHttpHandler.SetException(new TaskCanceledException("Request cancelled"));
             var exception = await Assert.ThrowsAsync<NewsApiException>(() => _newsApiClient.FetchTopHeadlinesAsync());
             Assert.Contains("Request to NewsAPI was cancelled", exception.Message);
         }
@@ -144,18 +115,11 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithEmptyArticlesArray_ReturnsEmptyList()
         {
-            // Arrange
             var apiKey = "test-api-key";
             var jsonResponse = @"{ ""articles"": [] }";
-
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-            _mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(jsonResponse);
-
-            // Act
+            _testHttpHandler.SetResponse(jsonResponse);
             var result = await _newsApiClient.FetchTopHeadlinesAsync();
-
-            // Assert
             var resultList = result.ToList();
             Assert.Empty(resultList);
         }
@@ -163,18 +127,11 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithMissingArticlesProperty_ReturnsEmptyList()
         {
-            // Arrange
             var apiKey = "test-api-key";
             var jsonResponse = @"{ ""status"": ""ok"" }";
-
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-            _mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(jsonResponse);
-
-            // Act
+            _testHttpHandler.SetResponse(jsonResponse);
             var result = await _newsApiClient.FetchTopHeadlinesAsync();
-
-            // Assert
             var resultList = result.ToList();
             Assert.Empty(resultList);
         }
@@ -182,7 +139,6 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithInvalidArticleData_HandlesGracefully()
         {
-            // Arrange
             var apiKey = "test-api-key";
             var jsonResponse = @"{
                 ""articles"": [
@@ -198,15 +154,9 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
                     }
                 ]
             }";
-
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-            _mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(jsonResponse);
-
-            // Act
+            _testHttpHandler.SetResponse(jsonResponse);
             var result = await _newsApiClient.FetchTopHeadlinesAsync();
-
-            // Assert
             var resultList = result.ToList();
             Assert.Single(resultList);
             Assert.Equal("Valid Article", resultList[0].Title);
@@ -215,7 +165,6 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithNullValues_HandlesGracefully()
         {
-            // Arrange
             var apiKey = "test-api-key";
             var jsonResponse = @"{
                 ""articles"": [
@@ -229,15 +178,9 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
                     }
                 ]
             }";
-
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-            _mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(jsonResponse);
-
-            // Act
+            _testHttpHandler.SetResponse(jsonResponse);
             var result = await _newsApiClient.FetchTopHeadlinesAsync();
-
-            // Assert
             var resultList = result.ToList();
             Assert.Single(resultList);
             var article = resultList[0];
@@ -251,7 +194,6 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithInvalidDate_DefaultsToUtcNow()
         {
-            // Arrange
             var apiKey = "test-api-key";
             var jsonResponse = @"{
                 ""articles"": [
@@ -265,48 +207,33 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
                     }
                 ]
             }";
-
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-            _mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(jsonResponse);
-
-            // Act
+            _testHttpHandler.SetResponse(jsonResponse);
             var result = await _newsApiClient.FetchTopHeadlinesAsync();
-
-            // Assert
             var resultList = result.ToList();
             Assert.Single(resultList);
             var article = resultList[0];
             Assert.Equal("Test Article", article.Title);
-            Assert.True(article.PublishedAt > DateTime.UtcNow.AddMinutes(-1));
+            Assert.True(article.PublishedAt > System.DateTime.UtcNow.AddMinutes(-1));
         }
 
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithCancellationToken_RespectsCancellation()
         {
-            // Arrange
             var apiKey = "test-api-key";
             var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();
-
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-            _mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new TaskCanceledException());
-
-            // Act & Assert
+            _testHttpHandler.SetException(new TaskCanceledException());
             await Assert.ThrowsAsync<NewsApiException>(() => _newsApiClient.FetchTopHeadlinesAsync(cancellationTokenSource.Token));
         }
 
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithUnexpectedException_ThrowsNewsApiException()
         {
-            // Arrange
             var apiKey = "test-api-key";
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-            _mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new Exception("Unexpected error"));
-
-            // Act & Assert
+            _testHttpHandler.SetException(new System.Exception("Unexpected error"));
             var exception = await Assert.ThrowsAsync<NewsApiException>(() => _newsApiClient.FetchTopHeadlinesAsync());
             Assert.Contains("Unexpected error occurred", exception.Message);
         }
@@ -314,7 +241,6 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
         [Fact]
         public async Task FetchTopHeadlinesAsync_WithMultipleArticles_ReturnsAllArticles()
         {
-            // Arrange
             var apiKey = "test-api-key";
             var jsonResponse = @"{
                 ""articles"": [
@@ -330,23 +256,51 @@ namespace NewsAggregation.Tests.Unit.Services.ExternalClients
                         ""description"": ""Description 2"",
                         ""url"": ""https://example.com/article2"",
                         ""source"": { ""name"": ""Source 2"" },
-                        ""publishedAt"": ""2023-01-01T13:00:00Z""
+                        ""publishedAt"": ""2023-01-02T12:00:00Z""
                     }
                 ]
             }";
-
             _mockConfiguration.Setup(x => x["NewsAPI:ApiKey"]).Returns(apiKey);
-            _mockHttpClient.Setup(x => x.GetStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(jsonResponse);
-
-            // Act
+            _testHttpHandler.SetResponse(jsonResponse);
             var result = await _newsApiClient.FetchTopHeadlinesAsync();
-
-            // Assert
             var resultList = result.ToList();
             Assert.Equal(2, resultList.Count);
-            Assert.Contains(resultList, a => a.Title == "Article 1");
-            Assert.Contains(resultList, a => a.Title == "Article 2");
+            Assert.Equal("Article 1", resultList[0].Title);
+            Assert.Equal("Article 2", resultList[1].Title);
+        }
+
+        // Test helper class for HTTP testing
+        private class TestHttpMessageHandler : HttpMessageHandler
+        {
+            private string? _responseContent;
+            private Exception? _exception;
+
+            public void SetResponse(string content)
+            {
+                _responseContent = content;
+                _exception = null;
+            }
+
+            public void SetException(Exception exception)
+            {
+                _exception = exception;
+                _responseContent = null;
+            }
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                if (_exception != null)
+                {
+                    throw _exception;
+                }
+
+                var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+                {
+                    Content = new StringContent(_responseContent ?? "{}")
+                };
+
+                return Task.FromResult(response);
+            }
         }
     }
 } 
